@@ -164,10 +164,18 @@ def get_project_data():
 
     audio_paths = get_audio_track_paths(video_path)
     audio_tracks = {
-        "wav_available": os.path.exists(audio_paths["wav"]),
-        "wav_url": f"/media/accessible/{os.path.basename(audio_paths['wav'])}" if os.path.exists(audio_paths["wav"]) else None,
-        "mp3_available": os.path.exists(audio_paths["mp3"]),
-        "mp3_url": f"/media/accessible/{os.path.basename(audio_paths['mp3'])}" if os.path.exists(audio_paths["mp3"]) else None
+        "isolated": {
+            "wav_available": os.path.exists(audio_paths["isolated"]["wav"]),
+            "wav_url": f"/media/accessible/{os.path.basename(audio_paths['isolated']['wav'])}" if os.path.exists(audio_paths["isolated"]["wav"]) else None,
+            "mp3_available": os.path.exists(audio_paths["isolated"]["mp3"]),
+            "mp3_url": f"/media/accessible/{os.path.basename(audio_paths['isolated']['mp3'])}" if os.path.exists(audio_paths["isolated"]["mp3"]) else None
+        },
+        "mixed": {
+            "wav_available": os.path.exists(audio_paths["mixed"]["wav"]),
+            "wav_url": f"/media/accessible/{os.path.basename(audio_paths['mixed']['wav'])}" if os.path.exists(audio_paths["mixed"]["wav"]) else None,
+            "mp3_available": os.path.exists(audio_paths["mixed"]["mp3"]),
+            "mp3_url": f"/media/accessible/{os.path.basename(audio_paths['mixed']['mp3'])}" if os.path.exists(audio_paths["mixed"]["mp3"]) else None
+        }
     }
 
     cues = load_cues(video_path)

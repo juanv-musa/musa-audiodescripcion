@@ -61,18 +61,25 @@ document.addEventListener("DOMContentLoaded", () => {
   async function loadProject() {
     try {
       const res = await fetch("/api/project");
+      if (!res.ok) {
+        console.error("Error al cargar /api/project:", res.status);
+        return;
+      }
       const data = await res.json();
       
       // Update video metadata
-      if (data.video) {
+      if (data.video && data.video.url) {
         infoFilename.textContent = data.video.filename || "-";
         infoDuration.textContent = data.video.duration_formatted || "-";
         infoResolution.textContent = `${data.video.width}x${data.video.height}`;
         infoSize.textContent = `${data.video.size_mb} MB`;
         infoFps.textContent = `${data.video.fps} fps`;
 
-        if (!video.src.endsWith(data.video.url)) {
-          video.src = data.video.url;
+        const encodedUrl = encodeURI(data.video.url);
+        const curSrcDecoded = decodeURIComponent(video.src || "");
+        if (!curSrcDecoded.endsWith(data.video.url)) {
+          video.src = encodedUrl;
+          video.load();
         }
       }
 
