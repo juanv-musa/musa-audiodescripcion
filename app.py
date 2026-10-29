@@ -361,10 +361,10 @@ app.mount("/media/tts", StaticFiles(directory=TTS_DIR), name="tts_media")
 app.mount("/media/video", StaticFiles(directory=BASE_DIR), name="video_media")
 app.mount("/media/uploads", StaticFiles(directory=UPLOADS_DIR), name="uploads_media")
 
-# Frontends
+# Frontends - La aplicación principal es el Estudio Profesional de Audiodescripción
 @app.get("/")
-def kiosk_page():
-    return FileResponse(os.path.join(BASE_DIR, "static", "index.html"))
+def home_page():
+    return FileResponse(os.path.join(BASE_DIR, "static", "editor.html"))
 
 @app.get("/editor")
 def editor_page():

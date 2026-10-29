@@ -21,6 +21,7 @@ document.addEventListener("DOMContentLoaded", () => {
   const btnDownloadMp3 = document.getElementById("btn-download-mp3");
   const btnAddCue = document.getElementById("btn-add-cue");
   const btnSaveCues = document.getElementById("btn-save-cues");
+  const btnSaveCuesTop = document.getElementById("btn-save-cues-top");
   const selectVoice = document.getElementById("select-voice");
   const selectVideo = document.getElementById("select-video");
   const statusMessage = document.getElementById("status-message");
@@ -600,8 +601,14 @@ document.addEventListener("DOMContentLoaded", () => {
     if (card) card.scrollIntoView({ behavior: "smooth", block: "center" });
   });
 
-  btnSaveCues.addEventListener("click", async () => {
+  btnSaveCues.addEventListener("click", performSaveCues);
+  if (btnSaveCuesTop) {
+    btnSaveCuesTop.addEventListener("click", performSaveCues);
+  }
+
+  async function performSaveCues() {
     btnSaveCues.textContent = "Guardando...";
+    if (btnSaveCuesTop) btnSaveCuesTop.innerHTML = "<span>⏳ Guardando...</span>";
     try {
       const res = await fetch("/api/save_cues", {
         method: "POST",
@@ -609,15 +616,17 @@ document.addEventListener("DOMContentLoaded", () => {
         body: JSON.stringify({ cues: cues, voice: selectVoice.value })
       });
       const data = await res.json();
-      btnSaveCues.textContent = "💾 Guardar Cambios";
+      btnSaveCues.textContent = "💾 Guardar";
+      if (btnSaveCuesTop) btnSaveCuesTop.innerHTML = "<span>💾 Guardar Cambios</span>";
       updateStatus(`Cambios guardados con éxito (${data.count} intervenciones).`);
       renderTimelineSlots();
     } catch (e) {
       console.error(e);
-      btnSaveCues.textContent = "💾 Guardar Cambios";
+      btnSaveCues.textContent = "💾 Guardar";
+      if (btnSaveCuesTop) btnSaveCuesTop.innerHTML = "<span>💾 Guardar Cambios</span>";
       updateStatus("Error al guardar cambios.");
     }
-  });
+  }
 
   btnAiGenerate.addEventListener("click", async () => {
     if (!confirm("¿Deseas que Gemini analice el vídeo seleccionado y genere automáticamente las marcas de audiodescripción?")) {

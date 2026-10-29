@@ -28,7 +28,7 @@
 
     <!-- Selector de Vídeo / Proyecto -->
     <div class="editor-header-center">
-      <span class="project-select-label">Vídeo Activo:</span>
+      <span class="project-select-label">Vídeo en edición:</span>
       <select id="select-video" class="project-select" title="Seleccionar vídeo en el que trabajar"></select>
       <button type="button" id="btn-open-upload" class="btn-upload-trigger" title="Subir otro vídeo al gestor">
         <span>+ Cargar Otro Vídeo</span>
@@ -36,9 +36,9 @@
     </div>
 
     <div class="editor-header-actions">
-      <a href="/" class="btn-header-tool" target="_blank" title="Abrir la pantalla de visualización del museo">
-        <span>🏛️ Ver Pantalla Museo</span>
-      </a>
+      <button type="button" id="btn-save-cues-top" class="btn-upload-trigger" style="background: rgba(140, 198, 63, 0.25); border-color: var(--musa-green); color: #fff;">
+        <span>💾 Guardar Cambios</span>
+      </button>
     </div>
   </header>
 
@@ -106,30 +106,29 @@
       <!-- Barra de Acciones Principales -->
       <div class="studio-toolbar">
         <div class="toolbar-primary">
+          <!-- Entregables Profesionales de Audio -->
+          <div class="action-btn-group">
+            <button type="button" id="btn-download-wav" class="btn-render-video" style="background: var(--musa-green); color: #0F141A; font-weight: 800;" title="Descargar pista de audio Broadcast WAV (48kHz estéreo) sincronizada desde 00:00 para Premiere / DaVinci">
+              <span>⬇️ Descargar Pista WAV (Premiere / DaVinci)</span>
+            </button>
+            <button type="button" id="btn-download-mp3" class="btn-download-audio" style="border-color: rgba(255,255,255,0.25); color: #fff;" title="Descargar pista de audio MP3 (320kbps)">
+              <span>⬇️ MP3</span>
+            </button>
+          </div>
+
           <div class="action-btn-group">
             <button type="button" id="btn-ai-generate" class="btn-ai-gen" title="Analizar el vídeo con Gemini y redactar audiodescripciones">
               <span>⚡ Generar con IA (Gemini)</span>
             </button>
-
-            <button type="button" id="btn-export-final" class="btn-render-video" title="Renderizar vídeo final MP4 con mezcla y ducking">
-              <span>🎬 Renderizar Vídeo Final</span>
-            </button>
-          </div>
-
-          <!-- Descargas directas de pistas de audio profesionales -->
-          <div class="action-btn-group">
-            <button type="button" id="btn-download-wav" class="btn-download-audio" title="Descargar pista de audio Broadcast WAV (48kHz) sincronizada para Premiere / DaVinci">
-              <span>⬇️ Pista WAV (Premiere / DaVinci)</span>
-            </button>
-            <button type="button" id="btn-download-mp3" class="btn-download-audio" style="border-color: rgba(255,255,255,0.2); color: #fff;" title="Descargar pista de audio MP3 (320kbps)">
-              <span>⬇️ MP3</span>
+            <button type="button" id="btn-export-final" class="btn-download-audio" style="border-color: rgba(255,255,255,0.18); font-size: 12px;" title="Renderizar vídeo de muestra MP4 con mezcla y ducking">
+              <span>🎬 Muestra Vídeo MP4</span>
             </button>
           </div>
         </div>
 
         <div class="toolbar-secondary">
           <div class="voice-wrap">
-            <label for="select-voice">Voz en Español:</label>
+            <label for="select-voice">Voz de locución:</label>
             <select id="select-voice" class="voice-select"></select>
           </div>
 
@@ -138,7 +137,7 @@
               + Añadir Marca
             </button>
             <button type="button" id="btn-save-cues" class="btn-simple-action" style="background: rgba(140, 198, 63, 0.2); border-color: var(--musa-green); color: #fff;">
-              💾 Guardar Cambios
+              💾 Guardar
             </button>
           </div>
         </div>
