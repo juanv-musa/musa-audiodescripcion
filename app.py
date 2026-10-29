@@ -355,6 +355,38 @@ def export_video_endpoint(background_tasks: BackgroundTasks):
     background_tasks.add_task(run_export)
     return {"status": "started", "message": "Renderizado de vídeo iniciado en segundo plano."}
 
+# Direct Download Endpoints with Attachment Headers
+@app.get("/api/download/video")
+def download_video():
+    video_path = state["current_video"]
+    target_video = get_accessible_video_path(video_path)
+    if os.path.exists(target_video):
+        filename = os.path.basename(target_video)
+        return FileResponse(
+            target_video,
+            media_type="video/mp4",
+            filename=filename,
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+        )
+    raise HTTPException(status_code=404, detail="El vídeo renderizado no está disponible aún.")
+
+@app.get("/api/download/audio")
+def download_audio(format: str = "wav"):
+    video_path = state["current_video"]
+    tracks = get_audio_track_paths(video_path)
+    ext = "wav" if format.lower() == "wav" else "mp3"
+    target_audio = tracks[ext]
+    if os.path.exists(target_audio):
+        filename = os.path.basename(target_audio)
+        media_type = "audio/wav" if ext == "wav" else "audio/mpeg"
+        return FileResponse(
+            target_audio,
+            media_type=media_type,
+            filename=filename,
+            headers={"Content-Disposition": f'attachment; filename="{filename}"'}
+        )
+    raise HTTPException(status_code=404, detail=f"La pista {ext.upper()} no está disponible aún.")
+
 # Media routes
 app.mount("/media/accessible", StaticFiles(directory=OUTPUT_DIR), name="accessible_media")
 app.mount("/media/tts", StaticFiles(directory=TTS_DIR), name="tts_media")

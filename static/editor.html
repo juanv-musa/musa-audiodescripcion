@@ -106,10 +106,13 @@
       <!-- Barra de Acciones Principales -->
       <div class="studio-toolbar">
         <div class="toolbar-primary">
-          <!-- Entregables Profesionales de Audio -->
+          <!-- Botones de Descarga de Entregables -->
           <div class="action-btn-group">
-            <button type="button" id="btn-download-wav" class="btn-render-video" style="background: var(--musa-green); color: #0F141A; font-weight: 800;" title="Descargar pista de audio Broadcast WAV (48kHz estéreo) sincronizada desde 00:00 para Premiere / DaVinci">
-              <span>⬇️ Descargar Pista WAV (Premiere / DaVinci)</span>
+            <button type="button" id="btn-download-video" class="btn-render-video" style="background: var(--musa-green); color: #0F141A; font-weight: 800;" title="Descargar el vídeo MP4 completo con la audiodescripción mezclada y ducking">
+              <span>⬇️ Descargar Vídeo (MP4)</span>
+            </button>
+            <button type="button" id="btn-download-wav" class="btn-download-audio" title="Descargar pista de audio Broadcast WAV (48kHz estéreo) sincronizada desde 00:00 para Premiere / DaVinci">
+              <span>⬇️ Pista Audio WAV (Premiere)</span>
             </button>
             <button type="button" id="btn-download-mp3" class="btn-download-audio" style="border-color: rgba(255,255,255,0.25); color: #fff;" title="Descargar pista de audio MP3 (320kbps)">
               <span>⬇️ MP3</span>
@@ -119,9 +122,6 @@
           <div class="action-btn-group">
             <button type="button" id="btn-ai-generate" class="btn-ai-gen" title="Analizar el vídeo con Gemini y redactar audiodescripciones">
               <span>⚡ Generar con IA (Gemini)</span>
-            </button>
-            <button type="button" id="btn-export-final" class="btn-download-audio" style="border-color: rgba(255,255,255,0.18); font-size: 12px;" title="Renderizar vídeo de muestra MP4 con mezcla y ducking">
-              <span>🎬 Muestra Vídeo MP4</span>
             </button>
           </div>
         </div>

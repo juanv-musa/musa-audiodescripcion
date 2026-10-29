@@ -16,7 +16,7 @@ document.addEventListener("DOMContentLoaded", () => {
 
   const cuesContainer = document.getElementById("cues-container");
   const btnAiGenerate = document.getElementById("btn-ai-generate");
-  const btnExportFinal = document.getElementById("btn-export-final");
+  const btnDownloadVideo = document.getElementById("btn-download-video") || document.getElementById("btn-export-final");
   const btnDownloadWav = document.getElementById("btn-download-wav");
   const btnDownloadMp3 = document.getElementById("btn-download-mp3");
   const btnAddCue = document.getElementById("btn-add-cue");
@@ -481,20 +481,14 @@ document.addEventListener("DOMContentLoaded", () => {
         body: formData
       });
       if (!res.ok) throw new Error("Error al solicitar pista de audio.");
-      startPolling(async () => {
-        // Trigger download
-        const pRes = await fetch("/api/project");
-        const pData = await pRes.json();
-        const url = format === "wav" ? pData.audio_tracks?.wav_url : pData.audio_tracks?.mp3_url;
-        if (url) {
-          const a = document.createElement("a");
-          a.href = url;
-          a.download = url.split("/").pop();
-          document.body.appendChild(a);
-          a.click();
-          document.body.removeChild(a);
-          updateStatus(`Pista ${format.toUpperCase()} descargada correctamente.`);
-        }
+      startPolling(() => {
+        // Trigger direct browser download
+        const a = document.createElement("a");
+        a.href = `/api/download/audio?format=${format}&t=${Date.now()}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        updateStatus(`Pista ${format.toUpperCase()} descargada correctamente.`);
       });
     } catch (err) {
       console.error(err);
@@ -505,23 +499,31 @@ document.addEventListener("DOMContentLoaded", () => {
   btnDownloadWav.addEventListener("click", () => triggerAudioExport("wav"));
   btnDownloadMp3.addEventListener("click", () => triggerAudioExport("mp3"));
 
-  // 7. Export Final Video (MP4)
-  btnExportFinal.addEventListener("click", async () => {
+  // 7. Direct Download Video (MP4)
+  btnDownloadVideo.addEventListener("click", async () => {
     try {
-      updateStatus("Guardando cambios y preparando exportación de vídeo final...");
+      updateStatus("Guardando cambios y preparando exportación de vídeo MP4...");
       await fetch("/api/save_cues", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ cues: cues, voice: selectVoice.value })
       });
 
-      updateStatus("Renderizando vídeo final accesible con audio ducking...");
+      updateStatus("Renderizando vídeo accesible con FFmpeg y ducking...");
       const res = await fetch("/api/export", { method: "POST" });
       if (!res.ok) {
         const errData = await res.json().catch(() => ({}));
         throw new Error(errData.detail || "Error al solicitar exportación.");
       }
-      startPolling();
+      startPolling(() => {
+        // Trigger direct browser download
+        const a = document.createElement("a");
+        a.href = `/api/download/video?t=${Date.now()}`;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+        updateStatus("Vídeo MP4 descargado con éxito.");
+      });
     } catch (e) {
       console.error(e);
       updateStatus(e.message || "Error al exportar vídeo final.");
@@ -532,7 +534,7 @@ document.addEventListener("DOMContentLoaded", () => {
   function startPolling(onDoneCallback) {
     if (pollInterval) return;
     btnAiGenerate.disabled = true;
-    btnExportFinal.disabled = true;
+    btnDownloadVideo.disabled = true;
     btnDownloadWav.disabled = true;
     btnDownloadMp3.disabled = true;
 
@@ -543,12 +545,12 @@ document.addEventListener("DOMContentLoaded", () => {
         updateStatus(data.state.status_message);
 
         if (data.state.is_exporting) {
-          btnExportFinal.innerHTML = "⏳ Renderizando vídeo...";
+          btnDownloadVideo.innerHTML = "⏳ Renderizando vídeo...";
           btnDownloadWav.innerHTML = "⏳ Procesando audio...";
         } else if (data.state.is_synthesizing) {
-          btnExportFinal.innerHTML = "🎙️ Sintetizando locuciones...";
+          btnDownloadVideo.innerHTML = "🎙️ Sintetizando...";
         } else if (data.state.is_analyzing) {
-          btnAiGenerate.innerHTML = "⚡ Analizando con Gemini...";
+          btnAiGenerate.innerHTML = "⚡ Analizando...";
         }
 
         if (!data.state.is_analyzing && !data.state.is_exporting && !data.state.is_synthesizing) {
@@ -556,10 +558,10 @@ document.addEventListener("DOMContentLoaded", () => {
           pollInterval = null;
           btnAiGenerate.disabled = false;
           btnAiGenerate.innerHTML = "<span>⚡ Generar con IA (Gemini)</span>";
-          btnExportFinal.disabled = false;
-          btnExportFinal.innerHTML = "<span>🎬 Renderizar Vídeo Final</span>";
+          btnDownloadVideo.disabled = false;
+          btnDownloadVideo.innerHTML = "<span>⬇️ Descargar Vídeo (MP4)</span>";
           btnDownloadWav.disabled = false;
-          btnDownloadWav.innerHTML = "<span>⬇️ Pista WAV (Premiere / DaVinci)</span>";
+          btnDownloadWav.innerHTML = "<span>⬇️ Pista Audio WAV (Premiere)</span>";
           btnDownloadMp3.disabled = false;
           btnDownloadMp3.innerHTML = "<span>⬇️ MP3</span>";
 
