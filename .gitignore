@@ -1,0 +1,16 @@
+# Virtual Environment
+.venv/
+venv/
+ENV/
+
+# Secrets & Environment variables
+.env
+
+# Cache & Bytecode
+__pycache__/
+*.py[cod]
+*$py.class
+.DS_Store
+
+# Logs
+*.log

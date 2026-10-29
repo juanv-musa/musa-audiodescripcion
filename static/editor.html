@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Estudio de Audiodescripción IA · Santuario Ibérico de El Pajarillo</title>
+  
+  <meta name="description" content="Panel de autoría, edición y validación de audiodescripción con IA y síntesis de voz en español para vídeos de museos.">
+
+  <!-- Google Fonts: Barlow Condensed & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/static/css/editor.css">
+</head>
+<body>
+
+  <!-- Cabecera del Estudio -->
+  <header class="editor-header">
+    <div class="editor-header-left">
+      <img src="/static/assets/logo-pajarillo.png" alt="Logo El Pajarillo" class="editor-logo">
+      <div class="editor-title">
+        <h1>Estudio de Audiodescripción Multimodal IA</h1>
+        <p>Centro de Interpretación Santuario Ibérico de El Pajarillo</p>
+      </div>
+    </div>
+
+    <div class="editor-header-actions">
+      <a href="/" class="btn-museum-view" target="_blank" title="Abrir la pantalla del museo en nueva pestaña">
+        <span>🏛️ Ver Pantalla del Museo</span>
+      </a>
+    </div>
+  </header>
+
+  <!-- Espacio de Trabajo Dividido en 2 Columnas -->
+  <div class="editor-workspace">
+
+    <!-- Panel Izquierdo: Monitor de Vídeo y Controles -->
+    <section class="preview-pane">
+      <div class="video-container">
+        <video id="editor-video" playsinline preload="auto">
+          Tu navegador no soporta vídeo.
+        </video>
+      </div>
+
+      <!-- Barra de navegación y scrubber -->
+      <div class="video-scrubber-bar">
+        <div id="scrubber-track" class="scrubber-track">
+          <div id="scrubber-fill" class="scrubber-fill"></div>
+        </div>
+
+        <div class="playback-controls">
+          <div class="playback-left">
+            <button type="button" id="btn-play" class="btn-action-small">▶ Reproducir</button>
+            <button type="button" id="btn-pause" class="btn-action-small">❚❚ Pausar</button>
+            <div id="live-time" class="live-time">00:00 / 01:55</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Ficha Técnica del Vídeo -->
+      <div class="video-info-box">
+        <span class="video-info-title">Ficha del Documental</span>
+        <div class="info-grid">
+          <div>Archivo: <strong id="info-filename">Cargando...</strong></div>
+          <div>Duración: <strong id="info-duration">-</strong></div>
+          <div>Resolución: <strong id="info-resolution">-</strong></div>
+          <div>Peso: <strong id="info-size">-</strong></div>
+          <div>FPS: <strong id="info-fps">-</strong></div>
+          <div>Canal Audio: <strong>Estéreo 48kHz</strong></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Panel Derecho: Estudio de Marcas y Motor IA -->
+    <section class="studio-pane">
+      
+      <!-- Barra de Acciones Principales -->
+      <div class="studio-toolbar">
+        <div class="toolbar-row-primary">
+          <button type="button" id="btn-ai-generate" class="btn-ai-generate" title="Analizar pausas y generar texto con Gemini">
+            <span>⚡ Generar con IA (Gemini)</span>
+          </button>
+
+          <button type="button" id="btn-export-final" class="btn-export-final" title="Renderizar vídeo con mezcla y atenuación de fondo">
+            <span>🎬 Renderizar Vídeo Final</span>
+          </button>
+        </div>
+
+        <div class="toolbar-row-secondary">
+          <div class="voice-select-wrap">
+            <label for="select-voice">Voz en Español:</label>
+            <select id="select-voice" class="voice-select"></select>
+          </div>
+
+          <div style="display: flex; gap: 8px;">
+            <button type="button" id="btn-add-cue" class="btn-add-cue" title="Añadir nueva marca en el segundo actual">
+              + Añadir Marca
+            </button>
+            <button type="button" id="btn-save-cues" class="btn-add-cue" style="background: rgba(198, 167, 94, 0.2); border-color: var(--tv-accent-gold);">
+              💾 Guardar Cambios
+            </button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Barra de Estado Dinámica -->
+      <div class="status-bar">
+        <span>Estado:</span>
+        <strong id="status-message">Listo</strong>
+      </div>
+
+      <!-- Lista de Intervenciones Descriptivas -->
+      <div id="cues-container" class="cues-container">
+        <!-- Renderizado dinámico por editor.js -->
+      </div>
+
+    </section>
+
+  </div>
+
+  <script src="/static/js/editor.js"></script>
+</body>
+</html>

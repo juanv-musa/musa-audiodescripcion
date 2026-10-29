@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Centro de Interpretación Santuario Ibérico de El Pajarillo · Reproducción Accesible</title>
+  
+  <meta name="description" content="Reproductor inclusivo y accesible para sala audiovisual y televisión de museo con capa de audiodescripción automática para personas ciegas.">
+
+  <!-- Google Fonts: Barlow Condensed & Inter -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@600;700;800&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+
+  <link rel="stylesheet" href="/static/css/museum.css">
+</head>
+<body>
+
+  <div class="kiosk-app">
+    
+    <!-- Cabecera Institucional del Museo -->
+    <header class="kiosk-header">
+      <div class="kiosk-header-left">
+        <img src="/static/assets/logo-pajarillo.png" alt="Centro de Interpretación Santuario Ibérico de El Pajarillo" class="kiosk-logo-img">
+        <div class="kiosk-title-group">
+          <h1>Santuario Ibérico de “El Pajarillo”</h1>
+          <p>Fondo Audiovisual de Sala · Sistema de Accesibilidad Universal</p>
+        </div>
+      </div>
+      
+      <div class="kiosk-header-right">
+        <a href="/editor" class="btn-editor-link" title="Abrir panel de edición y generación con IA">
+          <span>⚙️ Estudio de Audiodescripción IA</span>
+        </a>
+      </div>
+    </header>
+
+    <!-- Contenedor Principal: Pantalla y Mandos -->
+    <main class="kiosk-main">
+      
+      <!-- Escenario del Vídeo -->
+      <div class="video-stage">
+        <video id="kiosk-video" class="kiosk-video" playsinline preload="auto">
+          Tu navegador o pantalla no soporta reproducción de vídeo HTML5.
+        </video>
+
+        <!-- Capa de Play Gigante para inicio táctil -->
+        <div id="play-overlay" class="video-overlay-play" role="button" aria-label="Iniciar reproducción">
+          <div class="btn-giant-play">▶</div>
+          <div class="overlay-play-text">Toca la pantalla para reproducir</div>
+        </div>
+
+        <!-- Banner Dinámico de Audiodescripción / Subtítulo Accesible -->
+        <div id="ad-subtitle-banner" class="ad-subtitle-banner">
+          <span class="ad-subtitle-icon">AUDIODESCRIPCIÓN</span>
+          <span id="subtitle-text">Cargando descripción...</span>
+        </div>
+      </div>
+
+      <!-- Barra de Selección de Modo (El núcleo de accesibilidad) -->
+      <div class="mode-switcher-container">
+        <div class="mode-selector-group">
+          <span class="mode-label">Modo de Audio:</span>
+
+          <button type="button" id="btn-mode-standard" class="btn-mode active" aria-pressed="true">
+            <span class="mode-icon">🔊</span>
+            <span>Versión Estándar</span>
+          </button>
+
+          <button type="button" id="btn-mode-ad" class="btn-mode ad-mode" aria-pressed="false">
+            <span class="mode-icon">👁️‍🗨️</span>
+            <span>Con Audiodescripción</span>
+            <span class="mode-badge">Accesible</span>
+          </button>
+        </div>
+
+        <div class="secondary-controls">
+          <button type="button" id="btn-toggle-subtitles" class="btn-toggle-tool" title="Activar texto descriptivo en pantalla">
+            <span>💬 Subtítulos AD</span>
+          </button>
+          
+          <button type="button" id="btn-fullscreen" class="btn-toggle-tool" title="Pantalla completa">
+            <span>⛶ Pantalla Completa</span>
+          </button>
+        </div>
+      </div>
+
+      <!-- Barra de Controles Táctiles y Progreso -->
+      <div class="kiosk-player-bar">
+        <!-- Línea de tiempo -->
+        <div id="timeline-wrap" class="timeline-wrap" role="slider" aria-label="Línea de tiempo del documental" tabindex="0">
+          <div id="timeline-fill" class="timeline-fill"></div>
+        </div>
+
+        <!-- Fila de Controles -->
+        <div class="controls-row">
+          <div class="controls-left">
+            <button type="button" id="btn-play-pause" class="btn-ctrl play-pause-btn" aria-label="Reproducir o Pausar">
+              <span id="icon-play">▶</span>
+              <span id="icon-pause" style="display: none;">❚❚</span>
+            </button>
+
+            <button type="button" id="btn-rewind" class="btn-ctrl" title="Retroceder 10 segundos" aria-label="Retroceder 10 segundos">
+              <span>↺ 10s</span>
+            </button>
+
+            <button type="button" id="btn-forward" class="btn-ctrl" title="Avanzar 10 segundos" aria-label="Avanzar 10 segundos">
+              <span>↻ 10s</span>
+            </button>
+
+            <div class="time-display">
+              <span id="time-current">00:00</span>
+              <span class="time-sep">/</span>
+              <span id="time-total">01:55</span>
+            </div>
+          </div>
+
+          <div class="controls-right">
+            <div class="current-status-tag">
+              <span class="status-dot"></span>
+              <span id="active-mode-tag">Locución Original Estándar</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+  </div>
+
+  <script src="/static/js/museum.js"></script>
+</body>
+</html>

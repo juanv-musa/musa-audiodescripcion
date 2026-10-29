@@ -1,0 +1,68 @@
+[
+  {
+    "id": 1,
+    "start": "00:01",
+    "end": "00:13",
+    "start_seconds": 1.5,
+    "end_seconds": 13.5,
+    "text": "Título: 'Cómo sabemos todo esto: La investigación del Pajarillo'. Se suceden fotografías históricas en blanco y negro de las excavaciones arqueológicas, seguidas de la impactante cabeza esculpida de un lobo ibérico con las fauces abiertas.",
+    "audio_url": "/media/tts/cue_1_es-ES-AlvaroNeural.mp3",
+    "audio_duration": 14.88,
+    "audio_file": "output/tts/cue_1_es-ES-AlvaroNeural.mp3"
+  },
+  {
+    "id": 2,
+    "start": "00:14",
+    "end": "00:20",
+    "start_seconds": 14.5,
+    "end_seconds": 20.0,
+    "text": "En pantalla, el catedrático Manuel Molinos Molinos, en un laboratorio con estanterías al fondo.",
+    "audio_url": "/media/tts/cue_2_es-ES-AlvaroNeural.mp3",
+    "audio_duration": 6.38,
+    "audio_file": "output/tts/cue_2_es-ES-AlvaroNeural.mp3"
+  },
+  {
+    "id": 3,
+    "start": "00:32",
+    "end": "00:37",
+    "start_seconds": 32.0,
+    "end_seconds": 37.0,
+    "text": "Se muestran plano general del curso del río Jandulilla.",
+    "audio_url": "/media/tts/cue_3_es-ES-AlvaroNeural.mp3",
+    "audio_duration": 4.08,
+    "audio_file": "output/tts/cue_3_es-ES-AlvaroNeural.mp3"
+  },
+  {
+    "id": 4,
+    "start": "00:58",
+    "end": "01:03",
+    "start_seconds": 58.0,
+    "end_seconds": 63.0,
+    "text": "Se indica en el mapa Iltiraka, Loma del Perro y el Pajarillo.",
+    "audio_url": "/media/tts/cue_4_es-ES-AlvaroNeural.mp3",
+    "audio_duration": 4.49,
+    "audio_file": "output/tts/cue_4_es-ES-AlvaroNeural.mp3"
+  },
+  {
+    "id": 5,
+    "start": "01:20",
+    "end": "01:27",
+    "start_seconds": 80.0,
+    "end_seconds": 87.0,
+    "text": "En pantalla, el arqueólogo Juan Pereira Sieso, codirector de las excavaciones históricas.",
+    "audio_url": "/media/tts/cue_5_es-ES-AlvaroNeural.mp3",
+    "audio_duration": 6.26,
+    "audio_file": "output/tts/cue_5_es-ES-AlvaroNeural.mp3"
+  },
+  {
+    "id": 6,
+    "start": "01:38",
+    "end": "01:43",
+    "start_seconds": 98.0,
+    "end_seconds": 103.0,
+    "text": "Imágenes de archivo de trabajos arqueológicos y esculturas.",
+    "audio_url": "/media/tts/cue_6_es-ES-AlvaroNeural.mp3",
+    "audio_duration": 4.15,
+    "audio_file": "output/tts/cue_6_es-ES-AlvaroNeural.mp3"
+  }
+]
