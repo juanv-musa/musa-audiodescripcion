@@ -386,3 +386,86 @@ def generate_webvtt(cues: List[Dict[str, Any]], vtt_path: str):
         
     with open(vtt_path, "w", encoding="utf-8") as f:
         f.write("\n".join(lines))
+
+def export_full_mixed_audio_track(video_path: str, cues: List[Dict[str, Any]], output_audio_path: str) -> str:
+    """
+    Genera la pista de audio con la MEZCLA COMPLETA:
+    Audio original del vídeo + Voces de audiodescripción con atenuación automática (ducking).
+    Ideal para escuchar el resultado sonoro completo o para audioguías.
+    """
+    ffmpeg, _ = get_ffmpeg_binaries()
+    if not ffmpeg:
+        raise RuntimeError("ffmpeg no está disponible.")
+
+    os.makedirs(os.path.dirname(output_audio_path), exist_ok=True)
+
+    valid_cues = []
+    for c in cues:
+        f = c.get("audio_file")
+        if f and os.path.exists(f) and os.path.getsize(f) > 500:
+            valid_cues.append(c)
+
+    if not valid_cues:
+        raise ValueError("No hay locuciones sintetizadas para mezclar.")
+
+    inputs = ["-i", video_path]
+    filter_parts = []
+    amix_inputs = []
+
+    for i, cue in enumerate(valid_cues):
+        inputs.extend(["-i", cue["audio_file"]])
+        delay_ms = int(cue.get("start_seconds", 0.0) * 1000)
+        input_idx = i + 1
+        filter_parts.append(f"[{input_idx}:a]adelay={delay_ms}|{delay_ms},volume=1.25[delayed_{i}]")
+        amix_inputs.append(f"[delayed_{i}]")
+
+    if len(amix_inputs) == 1:
+        filter_parts.append(f"{amix_inputs[0]}asplit=2[ad_sc][ad_mix]")
+    else:
+        joined = "".join(amix_inputs)
+        filter_parts.append(f"{joined}amix=inputs={len(amix_inputs)}:dropout_transition=0:normalize=0,asplit=2[ad_sc][ad_mix]")
+
+    filter_parts.append("[0:a][ad_sc]sidechaincompress=threshold=0.08:ratio=6:attack=30:release=400[orig_ducked]")
+    filter_parts.append("[orig_ducked][ad_mix]amix=inputs=2:duration=first:dropout_transition=0:normalize=0[final_audio]")
+
+    filter_str = ";".join(filter_parts)
+
+    cmd = [
+        ffmpeg, "-y",
+        *inputs,
+        "-filter_complex", filter_str,
+        "-map", "[final_audio]"
+    ]
+
+    if output_audio_path.lower().endswith(".wav"):
+        cmd.extend(["-c:a", "pcm_s16le", "-ar", "48000"])
+    else:
+        cmd.extend(["-c:a", "libmp3lame", "-b:a", "320k", "-ar", "48000"])
+
+    cmd.append(output_audio_path)
+
+    res = subprocess.run(cmd, capture_output=True, text=True)
+    if res.returncode != 0:
+        raise RuntimeError(f"Error generando mezcla completa de audio: {res.stderr[-500:]}")
+
+    return output_audio_path
+
+def generate_webvtt(cues: List[Dict[str, Any]], vtt_path: str):
+    def vtt_time(seconds: float) -> str:
+        h = int(seconds // 3600)
+        m = int((seconds % 3600) // 60)
+        s = int(seconds % 60)
+        ms = int((seconds - int(seconds)) * 1000)
+        return f"{h:02d}:{m:02d}:{s:02d}.{ms:03d}"
+
+    lines = ["WEBVTT - Audiodescripción Accesible · Musaraña Gestión Integral de Museos\n"]
+    for cue in cues:
+        start_sec = cue.get("start_seconds", 0.0)
+        end_sec = cue.get("end_seconds", start_sec + 4.0)
+        text = cue.get("text", "")
+        lines.append(f"{cue.get('id', 1)}")
+        lines.append(f"{vtt_time(start_sec)} --> {vtt_time(end_sec)}")
+        lines.append(f"[AD]: {text}\n")
+        
+    with open(vtt_path, "w", encoding="utf-8") as f:
+        f.write("\n".join(lines))

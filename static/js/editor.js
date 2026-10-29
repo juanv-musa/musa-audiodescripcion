@@ -17,8 +17,16 @@ document.addEventListener("DOMContentLoaded", () => {
   const cuesContainer = document.getElementById("cues-container");
   const btnAiGenerate = document.getElementById("btn-ai-generate");
   const btnDownloadVideo = document.getElementById("btn-download-video") || document.getElementById("btn-export-final");
-  const btnDownloadWav = document.getElementById("btn-download-wav");
+  const btnDownloadWavIsolated = document.getElementById("btn-download-wav-isolated");
+  const btnDownloadWavMixed = document.getElementById("btn-download-wav-mixed");
   const btnDownloadMp3 = document.getElementById("btn-download-mp3");
+
+  // Timeline transport buttons
+  const btnGotoStart = document.getElementById("btn-goto-start");
+  const btnPrevCue = document.getElementById("btn-prev-cue");
+  const btnNextCue = document.getElementById("btn-next-cue");
+  const btnSeekBack = document.getElementById("btn-seek-back");
+  const btnSeekFwd = document.getElementById("btn-seek-fwd");
   const btnAddCue = document.getElementById("btn-add-cue");
   const btnSaveCues = document.getElementById("btn-save-cues");
   const btnSaveCuesTop = document.getElementById("btn-save-cues-top");
@@ -469,11 +477,13 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  // 6. Professional Audio Downloads (WAV & MP3)
-  async function triggerAudioExport(format) {
-    updateStatus(`Preparando exportación de pista ${format.toUpperCase()} sincronizada para Premiere/DaVinci...`);
+  // 6. Professional Audio Downloads (WAV & MP3: Isolated Voice vs Full Mix)
+  async function triggerAudioExport(format, mode = "isolated") {
+    const modeLabel = mode === "isolated" ? "SOLO VOZ AD" : "MEZCLA COMPLETA";
+    updateStatus(`Preparando exportación ${modeLabel} (${format.toUpperCase()})...`);
     const formData = new FormData();
     formData.append("format", format);
+    formData.append("mode", mode);
 
     try {
       const res = await fetch("/api/export_audio_track", {
@@ -484,11 +494,11 @@ document.addEventListener("DOMContentLoaded", () => {
       startPolling(() => {
         // Trigger direct browser download
         const a = document.createElement("a");
-        a.href = `/api/download/audio?format=${format}&t=${Date.now()}`;
+        a.href = `/api/download/audio?format=${format}&mode=${mode}&t=${Date.now()}`;
         document.body.appendChild(a);
         a.click();
         document.body.removeChild(a);
-        updateStatus(`Pista ${format.toUpperCase()} descargada correctamente.`);
+        updateStatus(`Pista ${modeLabel} descargada correctamente.`);
       });
     } catch (err) {
       console.error(err);
@@ -496,8 +506,53 @@ document.addEventListener("DOMContentLoaded", () => {
     }
   }
 
-  btnDownloadWav.addEventListener("click", () => triggerAudioExport("wav"));
-  btnDownloadMp3.addEventListener("click", () => triggerAudioExport("mp3"));
+  if (btnDownloadWavIsolated) btnDownloadWavIsolated.addEventListener("click", () => triggerAudioExport("wav", "isolated"));
+  if (btnDownloadWavMixed) btnDownloadWavMixed.addEventListener("click", () => triggerAudioExport("wav", "mixed"));
+  if (btnDownloadMp3) btnDownloadMp3.addEventListener("click", () => triggerAudioExport("mp3", "isolated"));
+
+  // Timeline transport controls
+  if (btnGotoStart) {
+    btnGotoStart.addEventListener("click", () => {
+      video.currentTime = 0;
+      updateStatus("Saltando al principio (00:00)");
+    });
+  }
+
+  if (btnSeekBack) {
+    btnSeekBack.addEventListener("click", () => {
+      video.currentTime = Math.max(0, video.currentTime - 5);
+    });
+  }
+
+  if (btnSeekFwd) {
+    btnSeekFwd.addEventListener("click", () => {
+      video.currentTime = Math.min(video.duration || 0, video.currentTime + 5);
+    });
+  }
+
+  if (btnPrevCue) {
+    btnPrevCue.addEventListener("click", () => {
+      const cur = video.currentTime || 0;
+      const prev = [...cues].reverse().find(c => c.start_seconds < (cur - 0.5));
+      if (prev) {
+        video.currentTime = prev.start_seconds;
+        updateStatus(`Saltando a marca #${prev.id} (${prev.start})`);
+      } else {
+        video.currentTime = 0;
+      }
+    });
+  }
+
+  if (btnNextCue) {
+    btnNextCue.addEventListener("click", () => {
+      const cur = video.currentTime || 0;
+      const next = cues.find(c => c.start_seconds > (cur + 0.2));
+      if (next) {
+        video.currentTime = next.start_seconds;
+        updateStatus(`Saltando a marca #${next.id} (${next.start})`);
+      }
+    });
+  }
 
   // 7. Direct Download Video (MP4)
   btnDownloadVideo.addEventListener("click", async () => {
@@ -533,10 +588,11 @@ document.addEventListener("DOMContentLoaded", () => {
   // 8. Polling Background Status
   function startPolling(onDoneCallback) {
     if (pollInterval) return;
-    btnAiGenerate.disabled = true;
-    btnDownloadVideo.disabled = true;
-    btnDownloadWav.disabled = true;
-    btnDownloadMp3.disabled = true;
+    if (btnAiGenerate) btnAiGenerate.disabled = true;
+    if (btnDownloadVideo) btnDownloadVideo.disabled = true;
+    if (btnDownloadWavIsolated) btnDownloadWavIsolated.disabled = true;
+    if (btnDownloadWavMixed) btnDownloadWavMixed.disabled = true;
+    if (btnDownloadMp3) btnDownloadMp3.disabled = true;
 
     pollInterval = setInterval(async () => {
       try {
@@ -545,25 +601,37 @@ document.addEventListener("DOMContentLoaded", () => {
         updateStatus(data.state.status_message);
 
         if (data.state.is_exporting) {
-          btnDownloadVideo.innerHTML = "⏳ Renderizando vídeo...";
-          btnDownloadWav.innerHTML = "⏳ Procesando audio...";
+          if (btnDownloadVideo) btnDownloadVideo.innerHTML = "⏳ Procesando...";
+          if (btnDownloadWavIsolated) btnDownloadWavIsolated.innerHTML = "⏳ Procesando...";
         } else if (data.state.is_synthesizing) {
-          btnDownloadVideo.innerHTML = "🎙️ Sintetizando...";
+          if (btnDownloadVideo) btnDownloadVideo.innerHTML = "🎙️ Sintetizando...";
         } else if (data.state.is_analyzing) {
-          btnAiGenerate.innerHTML = "⚡ Analizando...";
+          if (btnAiGenerate) btnAiGenerate.innerHTML = "⚡ Analizando...";
         }
 
         if (!data.state.is_analyzing && !data.state.is_exporting && !data.state.is_synthesizing) {
           clearInterval(pollInterval);
           pollInterval = null;
-          btnAiGenerate.disabled = false;
-          btnAiGenerate.innerHTML = "<span>⚡ Generar con IA (Gemini)</span>";
-          btnDownloadVideo.disabled = false;
-          btnDownloadVideo.innerHTML = "<span>⬇️ Descargar Vídeo (MP4)</span>";
-          btnDownloadWav.disabled = false;
-          btnDownloadWav.innerHTML = "<span>⬇️ Pista Audio WAV (Premiere)</span>";
-          btnDownloadMp3.disabled = false;
-          btnDownloadMp3.innerHTML = "<span>⬇️ MP3</span>";
+          if (btnAiGenerate) {
+            btnAiGenerate.disabled = false;
+            btnAiGenerate.innerHTML = "<span>⚡ Generar con IA (Gemini)</span>";
+          }
+          if (btnDownloadVideo) {
+            btnDownloadVideo.disabled = false;
+            btnDownloadVideo.innerHTML = "<span>⬇️ Descargar Vídeo (MP4)</span>";
+          }
+          if (btnDownloadWavIsolated) {
+            btnDownloadWavIsolated.disabled = false;
+            btnDownloadWavIsolated.innerHTML = "<span>⬇️ Solo Voz AD (WAV Premiere)</span>";
+          }
+          if (btnDownloadWavMixed) {
+            btnDownloadWavMixed.disabled = false;
+            btnDownloadWavMixed.innerHTML = "<span>⬇️ Mezcla Completa (WAV)</span>";
+          }
+          if (btnDownloadMp3) {
+            btnDownloadMp3.disabled = false;
+            btnDownloadMp3.innerHTML = "<span>MP3</span>";
+          }
 
           cues = data.cues || [];
           renderCues();

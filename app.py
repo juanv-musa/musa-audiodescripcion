@@ -16,6 +16,7 @@ from core.ad_engine import (
     synthesize_all_cues,
     export_accessible_video,
     export_ad_only_audio_track,
+    export_full_mixed_audio_track,
     parse_time_to_seconds,
     DEFAULT_VOICE,
     ALT_VOICE
@@ -103,12 +104,18 @@ def get_accessible_video_path(video_path: str) -> str:
             return alt
     return target
 
-def get_audio_track_paths(video_path: str) -> Dict[str, str]:
+def get_audio_track_paths(video_path: str) -> Dict[str, Dict[str, str]]:
     base = os.path.splitext(os.path.basename(video_path))[0]
     safe_name = "".join(c if c.isalnum() or c in ("-", "_") else "_" for c in base)
     return {
-        "wav": os.path.join(OUTPUT_DIR, f"{safe_name}_audiodescripcion_sincronizada.wav"),
-        "mp3": os.path.join(OUTPUT_DIR, f"{safe_name}_audiodescripcion_sincronizada.mp3")
+        "isolated": {
+            "wav": os.path.join(OUTPUT_DIR, f"{safe_name}_audiodescripcion_AISLADA.wav"),
+            "mp3": os.path.join(OUTPUT_DIR, f"{safe_name}_audiodescripcion_AISLADA.mp3")
+        },
+        "mixed": {
+            "wav": os.path.join(OUTPUT_DIR, f"{safe_name}_audio_MEZCLA_COMPLETA.wav"),
+            "mp3": os.path.join(OUTPUT_DIR, f"{safe_name}_audio_MEZCLA_COMPLETA.mp3")
+        }
     }
 
 def list_available_videos():
@@ -272,7 +279,7 @@ async def synthesize_all_endpoint(voice: Optional[str] = Form(None)):
         state["is_synthesizing"] = False
 
 @app.post("/api/export_audio_track")
-def export_audio_track_endpoint(background_tasks: BackgroundTasks, format: str = Form("wav")):
+def export_audio_track_endpoint(background_tasks: BackgroundTasks, format: str = Form("wav"), mode: str = Form("isolated")):
     if state["is_exporting"]:
         raise HTTPException(status_code=400, detail="Ya hay un renderizado en marcha.")
 
@@ -291,16 +298,27 @@ def export_audio_track_endpoint(background_tasks: BackgroundTasks, format: str =
 
             info = get_video_info(video_path)
             target_ext = "wav" if format.lower() == "wav" else "mp3"
+            is_isolated = (mode.lower() == "isolated")
             audio_paths = get_audio_track_paths(video_path)
-            target_path = audio_paths[target_ext]
+            target_path = audio_paths["isolated"][target_ext] if is_isolated else audio_paths["mixed"][target_ext]
 
-            state["status_message"] = f"Generando pista {target_ext.upper()} sincronizada a código de tiempo..."
-            export_ad_only_audio_track(
-                video_duration=info["duration"],
-                cues=cues,
-                output_audio_path=target_path
-            )
-            state["status_message"] = f"Pista {target_ext.upper()} profesional generada con éxito."
+            desc = "AISLADA (solo voz sincro)" if is_isolated else "MEZCLA COMPLETA (con fondo y ducking)"
+            state["status_message"] = f"Generando pista {target_ext.upper()} {desc}..."
+
+            if is_isolated:
+                export_ad_only_audio_track(
+                    video_duration=info["duration"],
+                    cues=cues,
+                    output_audio_path=target_path
+                )
+            else:
+                export_full_mixed_audio_track(
+                    video_path=video_path,
+                    cues=cues,
+                    output_audio_path=target_path
+                )
+
+            state["status_message"] = f"Pista {target_ext.upper()} {desc} generada con éxito."
         except Exception as e:
             state["status_message"] = f"Error al generar pista de audio: {str(e)}"
         finally:
@@ -371,11 +389,12 @@ def download_video():
     raise HTTPException(status_code=404, detail="El vídeo renderizado no está disponible aún.")
 
 @app.get("/api/download/audio")
-def download_audio(format: str = "wav"):
+def download_audio(format: str = "wav", mode: str = "isolated"):
     video_path = state["current_video"]
     tracks = get_audio_track_paths(video_path)
     ext = "wav" if format.lower() == "wav" else "mp3"
-    target_audio = tracks[ext]
+    is_isolated = (mode.lower() == "isolated")
+    target_audio = tracks["isolated"][ext] if is_isolated else tracks["mixed"][ext]
     if os.path.exists(target_audio):
         filename = os.path.basename(target_audio)
         media_type = "audio/wav" if ext == "wav" else "audio/mpeg"

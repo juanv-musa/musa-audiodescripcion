@@ -19,10 +19,9 @@
   <!-- Cabecera Institucional Musaraña -->
   <header class="editor-header">
     <div class="editor-header-left">
-      <img src="/static/assets/logo-musarana.png" alt="Musaraña Gestión Integral de Museos" class="musarana-logo">
+      <img src="/static/assets/logo-musarana.png" alt="Musaraña" class="musarana-logo">
       <div class="editor-title">
         <h1>MUSA <span class="brand-badge">Audiodescripción</span></h1>
-        <p>Musaraña · Gestión Integral de Museos</p>
       </div>
     </div>
 
@@ -74,14 +73,19 @@
 
         <div class="playback-controls">
           <div class="playback-left">
-            <button type="button" id="btn-play" class="btn-ctrl-editor btn-play-editor">▶ Reproducir</button>
-            <button type="button" id="btn-pause" class="btn-ctrl-editor">❚❚ Pausar</button>
+            <button type="button" id="btn-goto-start" class="btn-ctrl-editor" title="Ir al principio absoluto (00:00)">⏮️ Inicio</button>
+            <button type="button" id="btn-prev-cue" class="btn-ctrl-editor" title="Saltar a la marca anterior">⏮️ Marca</button>
+            <button type="button" id="btn-seek-back" class="btn-ctrl-editor" title="Retroceder 5 segundos">⏪ -5s</button>
+            <button type="button" id="btn-play" class="btn-ctrl-editor btn-play-editor">▶ Play</button>
+            <button type="button" id="btn-pause" class="btn-ctrl-editor">❚❚ Pausa</button>
+            <button type="button" id="btn-seek-fwd" class="btn-ctrl-editor" title="Avanzar 5 segundos">⏩ +5s</button>
+            <button type="button" id="btn-next-cue" class="btn-ctrl-editor" title="Saltar a la siguiente marca">Marca ⏭️</button>
             <div id="live-time" class="live-time">00:00 / 00:00</div>
           </div>
 
           <label class="toggle-live-preview" title="Reproducir las voces automáticamente en su segundo exacto con atenuación del vídeo">
             <input type="checkbox" id="check-live-preview" checked>
-            <span>Previsualizar locución en vivo</span>
+            <span>Previsualizar locución</span>
           </label>
         </div>
       </div>
@@ -111,11 +115,19 @@
             <button type="button" id="btn-download-video" class="btn-render-video" style="background: var(--musa-green); color: #0F141A; font-weight: 800;" title="Descargar el vídeo MP4 completo con la audiodescripción mezclada y ducking">
               <span>⬇️ Descargar Vídeo (MP4)</span>
             </button>
-            <button type="button" id="btn-download-wav" class="btn-download-audio" title="Descargar pista de audio Broadcast WAV (48kHz estéreo) sincronizada desde 00:00 para Premiere / DaVinci">
-              <span>⬇️ Pista Audio WAV (Premiere)</span>
+            
+            <!-- Pista Aislada: Solo voz en off con silencios para Premiere / DaVinci -->
+            <button type="button" id="btn-download-wav-isolated" class="btn-download-audio" style="border-color: #38BDF8; color: #38BDF8; font-weight: 700;" title="Descargar pista de audiodescripción AISLADA (solo voz con silencios, sin música original) en WAV 48kHz para Premiere / DaVinci">
+              <span>⬇️ Solo Voz AD (WAV Premiere)</span>
             </button>
-            <button type="button" id="btn-download-mp3" class="btn-download-audio" style="border-color: rgba(255,255,255,0.25); color: #fff;" title="Descargar pista de audio MP3 (320kbps)">
-              <span>⬇️ MP3</span>
+
+            <!-- Mezcla Completa: Audio original + Audiodescripción + Ducking -->
+            <button type="button" id="btn-download-wav-mixed" class="btn-download-audio" style="border-color: rgba(255,255,255,0.25); color: #fff;" title="Descargar pista con la MEZCLA COMPLETA (audio original + voz en off + ducking) en WAV 48kHz">
+              <span>⬇️ Mezcla Completa (WAV)</span>
+            </button>
+
+            <button type="button" id="btn-download-mp3" class="btn-download-audio" style="border-color: rgba(255,255,255,0.15); color: var(--tv-text-muted); font-size: 11px;" title="Descargar pista aislada en MP3">
+              <span>MP3</span>
             </button>
           </div>
 
