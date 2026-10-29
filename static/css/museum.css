@@ -3,14 +3,16 @@
    ========================================================================== */
 
 :root {
+  --musa-green: #8CC63F;
+  --musa-green-hover: #9ED64F;
   --tv-bg-dark: #0A110D;
   --tv-bg-surface: #131C16;
   --tv-card-bg: #1B271F;
   --tv-card-hover: #24352B;
-  --tv-primary: #384F3E;
-  --tv-primary-light: #52725D;
-  --tv-accent-gold: #C6A75E;
-  --tv-accent-gold-hover: #E0C47E;
+  --tv-primary: #274530;
+  --tv-primary-light: #385E42;
+  --tv-accent-gold: #8CC63F;
+  --tv-accent-gold-hover: #9ED64F;
   --tv-accent-cyan: #3DB7CC;
   --tv-stone: #E1E0DA;
   --tv-text: #F7F6F2;

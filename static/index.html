@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Centro de Interpretación Santuario Ibérico de El Pajarillo · Reproducción Accesible</title>
+  <title>MUSA ACCESIBLE · Reproductor Universal para Museos · Musaraña</title>
   
-  <meta name="description" content="Reproductor inclusivo y accesible para sala audiovisual y televisión de museo con capa de audiodescripción automática para personas ciegas.">
+  <meta name="description" content="Reproductor inclusivo y accesible para salas audiovisuales y tótems de museos. Desarrollado por Musaraña Gestión Integral de Museos.">
 
   <!-- Google Fonts: Barlow Condensed & Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -18,19 +18,19 @@
 
   <div class="kiosk-app">
     
-    <!-- Cabecera Institucional del Museo -->
+    <!-- Cabecera Institucional Musaraña -->
     <header class="kiosk-header">
       <div class="kiosk-header-left">
-        <img src="/static/assets/logo-pajarillo.png" alt="Centro de Interpretación Santuario Ibérico de El Pajarillo" class="kiosk-logo-img">
+        <img src="/static/assets/logo-musarana.png" alt="Musaraña Gestión Integral de Museos" class="kiosk-logo-img">
         <div class="kiosk-title-group">
-          <h1>Santuario Ibérico de “El Pajarillo”</h1>
-          <p>Fondo Audiovisual de Sala · Sistema de Accesibilidad Universal</p>
+          <h1>MUSA ACCESIBLE <span style="font-size: 13px; color: var(--musa-green); font-family: var(--font-body); font-weight: 700; text-transform: uppercase;">· Sala Audiovisual</span></h1>
+          <p id="kiosk-project-subtitle">Musaraña · Gestión Integral de Museos</p>
         </div>
       </div>
       
       <div class="kiosk-header-right">
-        <a href="/editor" class="btn-editor-link" title="Abrir panel de edición y generación con IA">
-          <span>⚙️ Estudio de Audiodescripción IA</span>
+        <a href="/editor" class="btn-editor-link" title="Abrir panel de edición y control">
+          <span>⚙️ Gestor Universal de Audiodescripción</span>
         </a>
       </div>
     </header>
@@ -41,7 +41,7 @@
       <!-- Escenario del Vídeo -->
       <div class="video-stage">
         <video id="kiosk-video" class="kiosk-video" playsinline preload="auto">
-          Tu navegador o pantalla no soporta reproducción de vídeo HTML5.
+          Tu pantalla o navegador no soporta reproducción de vídeo HTML5.
         </video>
 
         <!-- Capa de Play Gigante para inicio táctil -->
@@ -88,7 +88,7 @@
       <!-- Barra de Controles Táctiles y Progreso -->
       <div class="kiosk-player-bar">
         <!-- Línea de tiempo -->
-        <div id="timeline-wrap" class="timeline-wrap" role="slider" aria-label="Línea de tiempo del documental" tabindex="0">
+        <div id="timeline-wrap" class="timeline-wrap" role="slider" aria-label="Línea de tiempo" tabindex="0">
           <div id="timeline-fill" class="timeline-fill"></div>
         </div>
 
@@ -111,7 +111,7 @@
             <div class="time-display">
               <span id="time-current">00:00</span>
               <span class="time-sep">/</span>
-              <span id="time-total">01:55</span>
+              <span id="time-total">00:00</span>
             </div>
           </div>
 

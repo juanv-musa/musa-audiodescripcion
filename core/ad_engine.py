@@ -307,6 +307,66 @@ def export_accessible_video(video_path: str, cues: List[Dict[str, Any]], output_
     
     return output_video_path
 
+def export_ad_only_audio_track(video_duration: float, cues: List[Dict[str, Any]], output_audio_path: str) -> str:
+    """
+    Genera una pista de audio única (Broadcast WAV/MP3) con la duración exacta del vídeo.
+    Coloca cada intervención de audiodescripción en su segundo exacto y deja silencio en el resto.
+    Lista para arrastrar y sincronizar a pista en Premiere Pro, DaVinci Resolve o Pro Tools.
+    """
+    ffmpeg, _ = get_ffmpeg_binaries()
+    if not ffmpeg:
+        raise RuntimeError("ffmpeg no está disponible.")
+
+    os.makedirs(os.path.dirname(output_audio_path), exist_ok=True)
+
+    valid_cues = []
+    for c in cues:
+        f = c.get("audio_file")
+        if f and os.path.exists(f) and os.path.getsize(f) > 500:
+            valid_cues.append(c)
+
+    if not valid_cues:
+        raise ValueError("No hay locuciones de audiodescripción sintetizadas para exportar.")
+
+    # 1. Base input: silence generated with lavfi anullsrc matching video duration
+    dur_str = f"{video_duration:.3f}"
+    inputs = ["-f", "lavfi", "-t", dur_str, "-i", "anullsrc=r=48000:cl=stereo"]
+    filter_parts = []
+    amix_inputs = ["[0:a]"]
+
+    for i, cue in enumerate(valid_cues):
+        inputs.extend(["-i", cue["audio_file"]])
+        delay_ms = int(cue.get("start_seconds", 0.0) * 1000)
+        input_idx = i + 1
+        filter_parts.append(f"[{input_idx}:a]adelay={delay_ms}|{delay_ms},volume=1.0[delayed_{i}]")
+        amix_inputs.append(f"[delayed_{i}]")
+
+    joined = "".join(amix_inputs)
+    filter_parts.append(f"{joined}amix=inputs={len(amix_inputs)}:duration=first:dropout_transition=0:normalize=0[audio_out]")
+
+    filter_str = ";".join(filter_parts)
+
+    cmd = [
+        ffmpeg, "-y",
+        *inputs,
+        "-filter_complex", filter_str,
+        "-map", "[audio_out]"
+    ]
+
+    # Select codec based on extension
+    if output_audio_path.lower().endswith(".wav"):
+        cmd.extend(["-c:a", "pcm_s16le", "-ar", "48000"])
+    else:
+        cmd.extend(["-c:a", "libmp3lame", "-b:a", "320k", "-ar", "48000"])
+
+    cmd.append(output_audio_path)
+
+    res = subprocess.run(cmd, capture_output=True, text=True)
+    if res.returncode != 0:
+        raise RuntimeError(f"Error exportando pista de audio: {res.stderr[-500:]}")
+
+    return output_audio_path
+
 def generate_webvtt(cues: List[Dict[str, Any]], vtt_path: str):
     def vtt_time(seconds: float) -> str:
         h = int(seconds // 3600)
@@ -315,7 +375,7 @@ def generate_webvtt(cues: List[Dict[str, Any]], vtt_path: str):
         ms = int((seconds - int(seconds)) * 1000)
         return f"{h:02d}:{m:02d}:{s:02d}.{ms:03d}"
 
-    lines = ["WEBVTT - Audiodescripción Accesible · Santuario Ibérico de El Pajarillo\n"]
+    lines = ["WEBVTT - Audiodescripción Accesible · Musaraña Gestión Integral de Museos\n"]
     for cue in cues:
         start_sec = cue.get("start_seconds", 0.0)
         end_sec = cue.get("end_seconds", start_sec + 4.0)

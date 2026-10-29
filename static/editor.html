@@ -3,9 +3,9 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Estudio de Audiodescripción IA · Santuario Ibérico de El Pajarillo</title>
+  <title>MUSA · Gestor Universal de Audiodescripción · Musaraña</title>
   
-  <meta name="description" content="Panel de autoría, edición y validación de audiodescripción con IA y síntesis de voz en español para vídeos de museos.">
+  <meta name="description" content="Gestor universal de audiodescripción accesible para vídeos de museos y centros culturales. Creado por Musaraña Gestión Integral de Museos.">
 
   <!-- Google Fonts: Barlow Condensed & Inter -->
   <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -16,19 +16,28 @@
 </head>
 <body>
 
-  <!-- Cabecera del Estudio -->
+  <!-- Cabecera Institucional Musaraña -->
   <header class="editor-header">
     <div class="editor-header-left">
-      <img src="/static/assets/logo-pajarillo.png" alt="Logo El Pajarillo" class="editor-logo">
+      <img src="/static/assets/logo-musarana.png" alt="Musaraña Gestión Integral de Museos" class="musarana-logo">
       <div class="editor-title">
-        <h1>Estudio de Audiodescripción Multimodal IA</h1>
-        <p>Centro de Interpretación Santuario Ibérico de El Pajarillo</p>
+        <h1>MUSA <span class="brand-badge">Audiodescripción</span></h1>
+        <p>Musaraña · Gestión Integral de Museos</p>
       </div>
     </div>
 
+    <!-- Selector de Vídeo / Proyecto -->
+    <div class="editor-header-center">
+      <span class="project-select-label">Vídeo Activo:</span>
+      <select id="select-video" class="project-select" title="Seleccionar vídeo en el que trabajar"></select>
+      <button type="button" id="btn-open-upload" class="btn-upload-trigger" title="Subir otro vídeo al gestor">
+        <span>+ Cargar Otro Vídeo</span>
+      </button>
+    </div>
+
     <div class="editor-header-actions">
-      <a href="/" class="btn-museum-view" target="_blank" title="Abrir la pantalla del museo en nueva pestaña">
-        <span>🏛️ Ver Pantalla del Museo</span>
+      <a href="/" class="btn-header-tool" target="_blank" title="Abrir la pantalla de visualización del museo">
+        <span>🏛️ Ver Pantalla Museo</span>
       </a>
     </div>
   </header>
@@ -36,69 +45,99 @@
   <!-- Espacio de Trabajo Dividido en 2 Columnas -->
   <div class="editor-workspace">
 
-    <!-- Panel Izquierdo: Monitor de Vídeo y Controles -->
+    <!-- Panel Izquierdo: Monitor de Vídeo con Previsualización Sincronizada -->
     <section class="preview-pane">
       <div class="video-container">
         <video id="editor-video" playsinline preload="auto">
           Tu navegador no soporta vídeo.
         </video>
+
+        <!-- Indicador dinámico cuando la voz de audiodescripción está sonando en vivo -->
+        <div id="live-ad-indicator" class="live-ad-indicator">
+          <span class="pulse-dot"></span>
+          <span id="live-ad-text">Locución activa</span>
+        </div>
       </div>
 
-      <!-- Barra de navegación y scrubber -->
+      <!-- Barra de Línea de Tiempo con Bloques Iluminados -->
       <div class="video-scrubber-bar">
-        <div id="scrubber-track" class="scrubber-track">
-          <div id="scrubber-fill" class="scrubber-fill"></div>
+        <div style="display: flex; justify-content: space-between; align-items: center; font-size: 11px; color: var(--tv-text-muted);">
+          <span>Línea de tiempo · Espacios de audiodescripción</span>
+          <span id="scrubber-cue-status">Pasa el cursor o reproduce para ver las franjas</span>
+        </div>
+
+        <!-- Contenedor interactivo de slots -->
+        <div id="timeline-slots-container" class="timeline-slots-container" title="Haz clic en cualquier punto para saltar">
+          <div id="timeline-playhead" class="timeline-playhead"></div>
+          <!-- Inyectado dinámicamente con los bloques de cues -->
         </div>
 
         <div class="playback-controls">
           <div class="playback-left">
-            <button type="button" id="btn-play" class="btn-action-small">▶ Reproducir</button>
-            <button type="button" id="btn-pause" class="btn-action-small">❚❚ Pausar</button>
-            <div id="live-time" class="live-time">00:00 / 01:55</div>
+            <button type="button" id="btn-play" class="btn-ctrl-editor btn-play-editor">▶ Reproducir</button>
+            <button type="button" id="btn-pause" class="btn-ctrl-editor">❚❚ Pausar</button>
+            <div id="live-time" class="live-time">00:00 / 00:00</div>
           </div>
+
+          <label class="toggle-live-preview" title="Reproducir las voces automáticamente en su segundo exacto con atenuación del vídeo">
+            <input type="checkbox" id="check-live-preview" checked>
+            <span>Previsualizar locución en vivo</span>
+          </label>
         </div>
       </div>
 
       <!-- Ficha Técnica del Vídeo -->
       <div class="video-info-box">
-        <span class="video-info-title">Ficha del Documental</span>
+        <span class="video-info-title">Ficha Técnica del Proyecto</span>
         <div class="info-grid">
           <div>Archivo: <strong id="info-filename">Cargando...</strong></div>
           <div>Duración: <strong id="info-duration">-</strong></div>
           <div>Resolución: <strong id="info-resolution">-</strong></div>
-          <div>Peso: <strong id="info-size">-</strong></div>
+          <div>Tamaño: <strong id="info-size">-</strong></div>
           <div>FPS: <strong id="info-fps">-</strong></div>
-          <div>Canal Audio: <strong>Estéreo 48kHz</strong></div>
+          <div>Audio Master: <strong>Estéreo 48 kHz</strong></div>
         </div>
       </div>
     </section>
 
-    <!-- Panel Derecho: Estudio de Marcas y Motor IA -->
+    <!-- Panel Derecho: Estudio de Marcas, IA y Descargas -->
     <section class="studio-pane">
       
       <!-- Barra de Acciones Principales -->
       <div class="studio-toolbar">
-        <div class="toolbar-row-primary">
-          <button type="button" id="btn-ai-generate" class="btn-ai-generate" title="Analizar pausas y generar texto con Gemini">
-            <span>⚡ Generar con IA (Gemini)</span>
-          </button>
+        <div class="toolbar-primary">
+          <div class="action-btn-group">
+            <button type="button" id="btn-ai-generate" class="btn-ai-gen" title="Analizar el vídeo con Gemini y redactar audiodescripciones">
+              <span>⚡ Generar con IA (Gemini)</span>
+            </button>
 
-          <button type="button" id="btn-export-final" class="btn-export-final" title="Renderizar vídeo con mezcla y atenuación de fondo">
-            <span>🎬 Renderizar Vídeo Final</span>
-          </button>
+            <button type="button" id="btn-export-final" class="btn-render-video" title="Renderizar vídeo final MP4 con mezcla y ducking">
+              <span>🎬 Renderizar Vídeo Final</span>
+            </button>
+          </div>
+
+          <!-- Descargas directas de pistas de audio profesionales -->
+          <div class="action-btn-group">
+            <button type="button" id="btn-download-wav" class="btn-download-audio" title="Descargar pista de audio Broadcast WAV (48kHz) sincronizada para Premiere / DaVinci">
+              <span>⬇️ Pista WAV (Premiere / DaVinci)</span>
+            </button>
+            <button type="button" id="btn-download-mp3" class="btn-download-audio" style="border-color: rgba(255,255,255,0.2); color: #fff;" title="Descargar pista de audio MP3 (320kbps)">
+              <span>⬇️ MP3</span>
+            </button>
+          </div>
         </div>
 
-        <div class="toolbar-row-secondary">
-          <div class="voice-select-wrap">
+        <div class="toolbar-secondary">
+          <div class="voice-wrap">
             <label for="select-voice">Voz en Español:</label>
             <select id="select-voice" class="voice-select"></select>
           </div>
 
           <div style="display: flex; gap: 8px;">
-            <button type="button" id="btn-add-cue" class="btn-add-cue" title="Añadir nueva marca en el segundo actual">
+            <button type="button" id="btn-add-cue" class="btn-simple-action" title="Añadir nueva marca en el segundo actual">
               + Añadir Marca
             </button>
-            <button type="button" id="btn-save-cues" class="btn-add-cue" style="background: rgba(198, 167, 94, 0.2); border-color: var(--tv-accent-gold);">
+            <button type="button" id="btn-save-cues" class="btn-simple-action" style="background: rgba(140, 198, 63, 0.2); border-color: var(--musa-green); color: #fff;">
               💾 Guardar Cambios
             </button>
           </div>
@@ -118,6 +157,34 @@
 
     </section>
 
+  </div>
+
+  <!-- Modal para Cargar Nuevo Vídeo -->
+  <div id="modal-upload" class="modal-overlay">
+    <div class="modal-box">
+      <div class="modal-header">
+        <h2 class="modal-title">Cargar Nuevo Vídeo</h2>
+        <button type="button" id="btn-modal-close" class="btn-modal-close">✕</button>
+      </div>
+
+      <p style="font-size: 13px; color: var(--tv-text-muted);">
+        Sube cualquier vídeo expositivo en formato <strong>MP4, MOV o WEBM</strong>. El gestor lo configurará como proyecto activo para analizar y audiodescribir.
+      </p>
+
+      <div id="dropzone" class="dropzone-box">
+        <div class="dropzone-icon">📁</div>
+        <p style="font-weight: 700; color: #fff; margin-bottom: 4px;">Haz clic aquí o arrastra tu archivo de vídeo</p>
+        <p style="font-size: 12px; color: var(--tv-text-muted);">Formatos admitidos: .mp4, .mov, .m4v, .webm</p>
+        <input type="file" id="input-file-video" accept="video/mp4,video/quicktime,video/webm" style="display: none;">
+      </div>
+
+      <div id="upload-progress-wrap" style="display: none; flex-direction: column; gap: 8px;">
+        <span id="upload-progress-text" style="font-size: 13px; color: var(--musa-green);">Subiendo archivo...</span>
+        <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;">
+          <div id="upload-progress-bar" style="width: 0%; height: 100%; background: var(--musa-green); transition: width 0.2s;"></div>
+        </div>
+      </div>
+    </div>
   </div>
 
   <script src="/static/js/editor.js"></script>

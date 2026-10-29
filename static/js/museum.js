@@ -37,6 +37,11 @@ document.addEventListener("DOMContentLoaded", () => {
       
       // Set initial video source
       setVideoSource(currentMode);
+
+      const subtitleEl = document.getElementById("kiosk-project-subtitle");
+      if (subtitleEl && projectData?.video?.filename) {
+        subtitleEl.textContent = `Proyecto: ${projectData.video.filename.replace(/\.[^/.]+$/, "")} · Musaraña Gestión Integral de Museos`;
+      }
     } catch (e) {
       console.error("Error al cargar datos del proyecto:", e);
     }
