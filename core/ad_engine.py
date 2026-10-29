@@ -165,7 +165,7 @@ def generate_ad_cues_with_gemini(video_path: str, api_key: Optional[str] = None)
     
     if not file_ref:
         print(f"Subiendo {video_path} a Gemini Files API...")
-        file_ref = client.files.upload(file=video_path, display_name=base_name)
+        file_ref = client.files.upload(file=video_path, config={"display_name": base_name})
         import time
         while file_ref.state.name == "PROCESSING":
             time.sleep(2)
@@ -174,28 +174,36 @@ def generate_ad_cues_with_gemini(video_path: str, api_key: Optional[str] = None)
         if file_ref.state.name == "FAILED":
             raise RuntimeError("El procesamiento del vídeo en Gemini falló.")
 
-    prompt = """Eres un especialista de referencia en Audiodescripción (AD) según la norma española UNE 153020 para personas ciegas en museos y centros de interpretación.
-Estás elaborando la audiodescripción completa para el documental audiovisual expuesto en el Centro de Interpretación Santuario Ibérico de El Pajarillo.
+    is_pajarillo = "pajarillo" in base_name.lower()
+    if is_pajarillo:
+        specific_context = """Estás elaborando la audiodescripción completa para el documental audiovisual expuesto en el Centro de Interpretación Santuario Ibérico de El Pajarillo.
+Describe los elementos visuales clave: planos aéreos del entorno, río Jandulilla, cerros, excavaciones históricas, reconstrucción virtual 3D del santuario, y las esculturas íberas (la cabeza de lobo, los leones, el guerrero, etc.)."""
+    else:
+        specific_context = f"""Estás elaborando la audiodescripción completa para el vídeo '{base_name}'.
+Describe los elementos visuales clave: acciones de los personajes o presentadores, cambios de plano, escenarios, detalles narrativos y el contenido de rótulos o textos informativos en pantalla."""
+
+    prompt = f"""Eres un especialista de referencia en Audiodescripción (AD) según la norma española UNE 153020 para personas ciegas en museos y centros de interpretación.
+{specific_context}
 
 Instrucciones precisas:
 1. Analiza el audio y el vídeo con detalle a lo largo de toda la duración.
 2. Identifica los momentos ideales para insertar audiodescripción:
-   - Intervalos de música inicial y pausas entre intervenciones de los expertos.
-   - En las apariciones de los entrevistados, describe quién aparece (rótulos con nombres y cargos).
-   - Describe los elementos visuales clave: planos aéreos del entorno, río Jandulilla, cerros, excavaciones históricas, reconstrucción virtual 3D del santuario, y las esculturas íberas (la cabeza de lobo, los leones, el guerrero, etc.).
+   - Intervalos de música inicial y pausas entre intervenciones de los expertos o narradores.
+   - En las apariciones de personas/entrevistados, describe quién aparece (rótulos con nombres y cargos).
+   - Describe con objetividad y claridad lo que ocurre visualmente en pantalla en los huecos de voz disponibles.
 3. Sé conciso, objetivo y natural. No pises la locución de los narradores si no hay espacio suficiente.
 4. Para cada intervención, calcula con precisión el segundo de inicio y de fin.
 
 Devuelve EXCLUSIVAMENTE un array JSON con esta estructura exacta (sin texto previo ni markdown):
 [
-  {
+  {{
     "id": 1,
     "start": "00:02",
     "end": "00:13",
     "start_seconds": 2.0,
     "end_seconds": 13.0,
-    "text": "Título: Cómo sabemos todo esto: La investigación del Pajarillo. Fotografías de excavaciones y la cabeza esculpida en piedra de un lobo ibérico."
-  }
+    "text": "Descripción objetiva de lo que se ve en pantalla adaptada a la duración disponible."
+  }}
 ]
 """
 
