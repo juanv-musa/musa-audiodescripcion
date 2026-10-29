@@ -96,7 +96,12 @@ def save_cues_to_disk(cues: List[Dict[str, Any]], video_path: Optional[str] = No
 def get_accessible_video_path(video_path: str) -> str:
     base = os.path.splitext(os.path.basename(video_path))[0]
     safe_name = "".join(c if c.isalnum() or c in ("-", "_") else "_" for c in base)
-    return os.path.join(OUTPUT_DIR, f"{safe_name}_accesible.mp4")
+    target = os.path.join(OUTPUT_DIR, f"{safe_name}_accesible.mp4")
+    if not os.path.exists(target):
+        alt = os.path.join(OUTPUT_DIR, f"{safe_name.replace('_demo', '')}_accesible.mp4")
+        if os.path.exists(alt):
+            return alt
+    return target
 
 def get_audio_track_paths(video_path: str) -> Dict[str, str]:
     base = os.path.splitext(os.path.basename(video_path))[0]

@@ -3,20 +3,20 @@
     "id": 1,
     "start": "00:01",
     "end": "00:13",
-    "start_seconds": 1.5,
-    "end_seconds": 13.5,
-    "text": "Título: 'Cómo sabemos todo esto: La investigación del Pajarillo'. Se suceden fotografías históricas en blanco y negro de las excavaciones arqueológicas, seguidas de la impactante cabeza esculpida de un lobo ibérico con las fauces abiertas.",
+    "start_seconds": 1.0,
+    "end_seconds": 13.0,
+    "text": "Título: 'Cómo sabemos todo esto: La investigación del Pajarillo'. Se suceden fotografías históricas en blanco y negro de las excavaciones arqueológicas, seguidas de la cabeza esculpida de un lobo ibérico con las fauces abiertas.",
     "audio_url": "/media/tts/cue_1_es-ES-AlvaroNeural.mp3",
-    "audio_duration": 14.88,
-    "audio_file": "output/tts/cue_1_es-ES-AlvaroNeural.mp3"
+    "audio_duration": 14.33,
+    "audio_file": "/Users/juan/Documents/antigravity_proyect/audiodescripcion/output/tts/cue_1_es-ES-AlvaroNeural.mp3"
   },
   {
     "id": 2,
     "start": "00:14",
     "end": "00:20",
-    "start_seconds": 14.5,
+    "start_seconds": 14.0,
     "end_seconds": 20.0,
-    "text": "En pantalla, el catedrático Manuel Molinos Molinos, en un laboratorio con estanterías al fondo.",
+    "text": "En pantalla, el catedrático Manuel Molinos Molinos.",
     "audio_url": "/media/tts/cue_2_es-ES-AlvaroNeural.mp3",
     "audio_duration": 6.38,
     "audio_file": "output/tts/cue_2_es-ES-AlvaroNeural.mp3"
