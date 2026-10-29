@@ -604,14 +604,20 @@ document.addEventListener("DOMContentLoaded", () => {
     pollInterval = setInterval(async () => {
       try {
         const res = await fetch("/api/project");
+        if (!res.ok) {
+          console.warn("Polling esperando respuesta válida:", res.status);
+          return;
+        }
         const data = await res.json();
+        if (!data || !data.state) return;
+
         updateStatus(data.state.status_message);
 
         if (data.state.is_exporting) {
-          if (btnDownloadVideo) btnDownloadVideo.innerHTML = "⏳ Procesando...";
-          if (btnDownloadWavIsolated) btnDownloadWavIsolated.innerHTML = "⏳ Procesando...";
+          if (btnDownloadVideo) btnDownloadVideo.innerHTML = "⏳ Renderizando vídeo...";
+          if (btnDownloadWavIsolated) btnDownloadWavIsolated.innerHTML = "⏳ Procesando audio...";
         } else if (data.state.is_synthesizing) {
-          if (btnDownloadVideo) btnDownloadVideo.innerHTML = "🎙️ Sintetizando...";
+          if (btnDownloadVideo) btnDownloadVideo.innerHTML = "🎙️ Sintetizando voz...";
         } else if (data.state.is_analyzing) {
           if (btnAiGenerate) btnAiGenerate.innerHTML = "⚡ Analizando...";
         }
@@ -644,7 +650,10 @@ document.addEventListener("DOMContentLoaded", () => {
           renderCues();
           renderTimelineSlots();
 
-          if (onDoneCallback) onDoneCallback();
+          const hasError = data.state.status_message && data.state.status_message.toLowerCase().includes("error");
+          if (!hasError && onDoneCallback) {
+            onDoneCallback();
+          }
         }
       } catch (e) {
         console.error("Polling error:", e);

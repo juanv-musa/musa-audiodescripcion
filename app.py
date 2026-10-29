@@ -83,7 +83,14 @@ def load_cues(video_path: Optional[str] = None) -> List[Dict[str, Any]]:
     if os.path.exists(data_file):
         try:
             with open(data_file, "r", encoding="utf-8") as f:
-                return json.load(f)
+                cues = json.load(f)
+                for cue in cues:
+                    if cue.get("audio_file"):
+                        fname = os.path.basename(cue["audio_file"])
+                        local_path = os.path.join(TTS_DIR, fname)
+                        if os.path.exists(local_path):
+                            cue["audio_file"] = local_path
+                return cues
         except Exception:
             return []
     return []
@@ -367,10 +374,12 @@ def export_video_endpoint(background_tasks: BackgroundTasks):
             try:
                 info = get_video_info(video_path)
                 tracks = get_audio_track_paths(video_path)
-                export_ad_only_audio_track(info["duration"], cues, tracks["wav"])
-                export_ad_only_audio_track(info["duration"], cues, tracks["mp3"])
-            except Exception:
-                pass
+                export_ad_only_audio_track(info["duration"], cues, tracks["isolated"]["wav"])
+                export_ad_only_audio_track(info["duration"], cues, tracks["isolated"]["mp3"])
+                export_full_mixed_audio_track(video_path, cues, tracks["mixed"]["wav"])
+                export_full_mixed_audio_track(video_path, cues, tracks["mixed"]["mp3"])
+            except Exception as ex:
+                print("Info post-exportación audio:", ex)
 
             state["status_message"] = "Vídeo final para el museo renderizado con éxito."
         except Exception as e:
