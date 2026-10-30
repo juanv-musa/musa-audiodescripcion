@@ -93,10 +93,14 @@ def get_audio_duration(audio_path: str) -> float:
     except Exception:
         return 0.0
 
-async def synthesize_cue_audio(cue: Dict[str, Any], voice: str = DEFAULT_VOICE, output_dir: str = "output/tts") -> Dict[str, Any]:
+async def synthesize_cue_audio(cue: Dict[str, Any], voice: str = DEFAULT_VOICE, output_dir: str = "output/tts", prefix: Optional[str] = None) -> Dict[str, Any]:
     os.makedirs(output_dir, exist_ok=True)
     cue_id = cue.get("id", 1)
-    filename = f"cue_{cue_id}_{voice}.mp3"
+    if prefix:
+        safe_prefix = "".join(c if c.isalnum() or c in ("-", "_") else "_" for c in prefix)
+        filename = f"cue_{safe_prefix}_{cue_id}_{voice}.mp3"
+    else:
+        filename = f"cue_{cue_id}_{voice}.mp3"
     filepath = os.path.join(output_dir, filename)
     
     text = cue.get("text", "").strip()
@@ -139,8 +143,8 @@ async def synthesize_cue_audio(cue: Dict[str, Any], voice: str = DEFAULT_VOICE, 
         cue["audio_file"] = None
         raise RuntimeError(f"Fallo en síntesis de voz para #{cue_id}: {str(e)}")
 
-async def synthesize_all_cues(cues: List[Dict[str, Any]], voice: str = DEFAULT_VOICE, output_dir: str = "output/tts") -> List[Dict[str, Any]]:
-    tasks = [synthesize_cue_audio(c, voice, output_dir) for c in cues]
+async def synthesize_all_cues(cues: List[Dict[str, Any]], voice: str = DEFAULT_VOICE, output_dir: str = "output/tts", prefix: Optional[str] = None) -> List[Dict[str, Any]]:
+    tasks = [synthesize_cue_audio(c, voice, output_dir, prefix=prefix) for c in cues]
     return await asyncio.gather(*tasks)
 
 def generate_ad_cues_with_gemini(video_path: str, api_key: Optional[str] = None) -> List[Dict[str, Any]]:

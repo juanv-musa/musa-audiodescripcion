@@ -51,6 +51,19 @@ document.addEventListener("DOMContentLoaded", () => {
   const uploadProgressBar = document.getElementById("upload-progress-bar");
   const uploadProgressText = document.getElementById("upload-progress-text");
 
+  // Delete & Video Management Elements
+  const btnDeleteCurrentVideo = document.getElementById("btn-delete-current-video");
+  const modalConfirmDelete = document.getElementById("modal-confirm-delete");
+  const btnConfirmDeleteClose = document.getElementById("btn-confirm-delete-close");
+  const deleteTargetName = document.getElementById("delete-target-name");
+  const btnCancelDelete = document.getElementById("btn-cancel-delete");
+  const btnExecuteDelete = document.getElementById("btn-execute-delete");
+  const storedVideosList = document.getElementById("stored-videos-list");
+  const storageTotalBadge = document.getElementById("storage-total-badge");
+
+  let currentVideoFilename = null;
+  let targetToDelete = null;
+
   let cues = [];
   let pollInterval = null;
   let activeAudio = new Audio();
@@ -81,6 +94,33 @@ document.addEventListener("DOMContentLoaded", () => {
           video.src = encodedUrl;
           video.load();
         }
+      } else {
+        infoFilename.textContent = "Ninguno seleccionado";
+        infoDuration.textContent = "-";
+        infoResolution.textContent = "-";
+        infoSize.textContent = "-";
+        infoFps.textContent = "-";
+        video.removeAttribute("src");
+        video.load();
+      }
+
+      currentVideoFilename = (data.video && data.video.filename) ? data.video.filename : null;
+
+      // Update header delete button
+      if (btnDeleteCurrentVideo) {
+        const curObj = data.available_videos?.find(v => v.filename === currentVideoFilename);
+        if (curObj && curObj.can_delete) {
+          btnDeleteCurrentVideo.disabled = false;
+          btnDeleteCurrentVideo.title = `Eliminar "${curObj.filename}" y liberar espacio en disco`;
+          btnDeleteCurrentVideo.style.display = "inline-flex";
+        } else if (curObj && curObj.is_default) {
+          btnDeleteCurrentVideo.disabled = true;
+          btnDeleteCurrentVideo.title = "El vídeo de muestra predeterminado está protegido como plantilla del sistema";
+          btnDeleteCurrentVideo.style.display = "inline-flex";
+        } else {
+          btnDeleteCurrentVideo.disabled = true;
+          btnDeleteCurrentVideo.style.display = "none";
+        }
       }
 
       // Populate video select
@@ -89,12 +129,15 @@ document.addEventListener("DOMContentLoaded", () => {
         data.available_videos.forEach(v => {
           const opt = document.createElement("option");
           opt.value = v.filename;
-          opt.textContent = v.filename + (v.is_default ? " (Muestra inicial)" : "");
+          opt.textContent = v.filename + (v.is_default ? " (Muestra inicial)" : ` (${v.size_mb} MB)`);
           if (data.video && v.filename === data.video.filename) {
             opt.selected = true;
           }
           selectVideo.appendChild(opt);
         });
+
+        // Render Stored Videos list in the upload/manage modal
+        renderStoredVideosList(data.available_videos, currentVideoFilename);
       }
 
       // Populate voices
@@ -399,9 +442,8 @@ document.addEventListener("DOMContentLoaded", () => {
     if (dur > 0) video.currentTime = pos * dur;
   });
 
-  // 4. Video Selection Dropdown
-  selectVideo.addEventListener("change", async (e) => {
-    const filename = e.target.value;
+  // 4. Video Selection Dropdown & Switching
+  async function switchVideo(filename) {
     updateStatus(`Cambiando a proyecto: ${filename}...`);
     try {
       const formData = new FormData();
@@ -414,6 +456,10 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error(err);
       updateStatus("Error al cambiar de vídeo.");
     }
+  }
+
+  selectVideo.addEventListener("change", async (e) => {
+    await switchVideo(e.target.value);
   });
 
   // 5. Upload Modal & File Handling
@@ -482,6 +528,129 @@ document.addEventListener("DOMContentLoaded", () => {
       console.error(err);
       uploadProgressText.textContent = "Error al subir el vídeo.";
     }
+  }
+
+  // 5b. Stored Videos List & Deletion Management
+  function renderStoredVideosList(videos, activeFilename) {
+    if (!storedVideosList) return;
+    storedVideosList.innerHTML = "";
+
+    let totalDiskMb = 0;
+    videos.forEach(v => {
+      totalDiskMb += (v.total_mb || v.size_mb || 0);
+    });
+    if (storageTotalBadge) {
+      storageTotalBadge.textContent = `${videos.length} vídeo${videos.length === 1 ? '' : 's'} · ${totalDiskMb.toFixed(1)} MB total`;
+    }
+
+    if (videos.length === 0) {
+      storedVideosList.innerHTML = '<p style="font-size: 13px; color: var(--tv-text-muted); text-align: center; padding: 12px 0;">No hay vídeos disponibles.</p>';
+      return;
+    }
+
+    videos.forEach(v => {
+      const isActive = (v.filename === activeFilename);
+      const card = document.createElement("div");
+      card.className = `stored-video-card ${isActive ? 'active-video' : ''}`;
+
+      const totalMb = v.total_mb ? `${v.total_mb} MB en disco` : `${v.size_mb} MB`;
+
+      card.innerHTML = `
+        <div class="stored-video-info">
+          <div class="stored-video-title" title="${v.filename}">${v.filename}</div>
+          <div class="stored-video-meta">
+            <span class="stored-video-tag ${v.is_default ? 'tag-default' : 'tag-upload'}">
+              ${v.is_default ? 'Muestra base' : 'Vídeo subido'}
+            </span>
+            ${isActive ? '<span class="stored-video-tag tag-active">En edición</span>' : ''}
+            <span>💾 ${totalMb}</span>
+          </div>
+        </div>
+        <div class="stored-video-actions">
+          ${!isActive ? `<button type="button" class="btn-video-card-switch" data-filename="${v.filename}" title="Trabajar en este vídeo">Cargar</button>` : ''}
+          ${v.can_delete ? `<button type="button" class="btn-video-card-delete" data-filename="${v.filename}" title="Eliminar definitivamente este vídeo">🗑️ Borrar</button>` : ''}
+          ${v.is_default ? `<span style="font-size: 11px; color: #94a3b8; padding: 4px 8px;" title="Vídeo protegido del museo">Protegido</span>` : ''}
+        </div>
+      `;
+
+      const btnSwitch = card.querySelector(".btn-video-card-switch");
+      if (btnSwitch) {
+        btnSwitch.addEventListener("click", async () => {
+          modalUpload.classList.remove("active");
+          await switchVideo(v.filename);
+        });
+      }
+
+      const btnDelete = card.querySelector(".btn-video-card-delete");
+      if (btnDelete) {
+        btnDelete.addEventListener("click", () => {
+          requestDeleteVideo(v.filename);
+        });
+      }
+
+      storedVideosList.appendChild(card);
+    });
+  }
+
+  function requestDeleteVideo(filename) {
+    targetToDelete = filename;
+    if (deleteTargetName) deleteTargetName.textContent = `"${filename}"`;
+    if (modalConfirmDelete) modalConfirmDelete.classList.add("active");
+  }
+
+  function closeDeleteModal() {
+    if (modalConfirmDelete) modalConfirmDelete.classList.remove("active");
+    targetToDelete = null;
+  }
+
+  if (btnConfirmDeleteClose) btnConfirmDeleteClose.addEventListener("click", closeDeleteModal);
+  if (btnCancelDelete) btnCancelDelete.addEventListener("click", closeDeleteModal);
+  if (modalConfirmDelete) {
+    modalConfirmDelete.addEventListener("click", (e) => {
+      if (e.target === modalConfirmDelete) closeDeleteModal();
+    });
+  }
+
+  if (btnDeleteCurrentVideo) {
+    btnDeleteCurrentVideo.addEventListener("click", () => {
+      if (currentVideoFilename) {
+        requestDeleteVideo(currentVideoFilename);
+      }
+    });
+  }
+
+  if (btnExecuteDelete) {
+    btnExecuteDelete.addEventListener("click", async () => {
+      if (!targetToDelete) return;
+      const deletingName = targetToDelete;
+      btnExecuteDelete.disabled = true;
+      btnExecuteDelete.innerHTML = "<span>⏳ Borrando...</span>";
+      updateStatus(`Eliminando vídeo "${deletingName}" y liberando espacio...`);
+
+      try {
+        const formData = new FormData();
+        formData.append("filename", deletingName);
+        const res = await fetch("/api/delete_video", {
+          method: "POST",
+          body: formData
+        });
+        const data = await res.json();
+        if (!res.ok) {
+          throw new Error(data.detail || "Error al eliminar vídeo.");
+        }
+
+        closeDeleteModal();
+        await loadProject();
+        updateStatus(`Vídeo "${deletingName}" eliminado con éxito (${data.freed_mb} MB liberados).`);
+      } catch (err) {
+        console.error(err);
+        alert(err.message || "Error al eliminar el vídeo.");
+        updateStatus("Error al eliminar vídeo.");
+      } finally {
+        btnExecuteDelete.disabled = false;
+        btnExecuteDelete.innerHTML = "<span>🗑️ Sí, Eliminar Definitivamente</span>";
+      }
+    });
   }
 
   // 6. Professional Audio Downloads (WAV & MP3: Isolated Voice vs Full Mix)

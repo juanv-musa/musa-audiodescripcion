@@ -69,10 +69,14 @@ class SaveCuesRequest(BaseModel):
     cues: List[CueItem]
     voice: Optional[str] = DEFAULT_VOICE
 
+def get_video_safe_name(video_path: str) -> str:
+    if not video_path:
+        return ""
+    base = os.path.splitext(os.path.basename(video_path))[0]
+    return "".join(c if c.isalnum() or c in ("-", "_") else "_" for c in base)
+
 def get_cues_filepath(video_path: str) -> str:
-    filename = os.path.basename(video_path)
-    base_name = os.path.splitext(filename)[0]
-    safe_name = "".join(c if c.isalnum() or c in ("-", "_") else "_" for c in base_name)
+    safe_name = get_video_safe_name(video_path)
     if "pajarillo" in safe_name.lower():
         return os.path.join(DATA_DIR, "ad_cues.json")
     return os.path.join(DATA_DIR, f"{safe_name}_cues.json")
@@ -102,8 +106,7 @@ def save_cues_to_disk(cues: List[Dict[str, Any]], video_path: Optional[str] = No
         json.dump(cues, f, ensure_ascii=False, indent=2)
 
 def get_accessible_video_path(video_path: str) -> str:
-    base = os.path.splitext(os.path.basename(video_path))[0]
-    safe_name = "".join(c if c.isalnum() or c in ("-", "_") else "_" for c in base)
+    safe_name = get_video_safe_name(video_path)
     target = os.path.join(OUTPUT_DIR, f"{safe_name}_accesible.mp4")
     if not os.path.exists(target):
         alt = os.path.join(OUTPUT_DIR, f"{safe_name.replace('_demo', '')}_accesible.mp4")
@@ -112,8 +115,7 @@ def get_accessible_video_path(video_path: str) -> str:
     return target
 
 def get_audio_track_paths(video_path: str) -> Dict[str, Dict[str, str]]:
-    base = os.path.splitext(os.path.basename(video_path))[0]
-    safe_name = "".join(c if c.isalnum() or c in ("-", "_") else "_" for c in base)
+    safe_name = get_video_safe_name(video_path)
     return {
         "isolated": {
             "wav": os.path.join(OUTPUT_DIR, f"{safe_name}_audiodescripcion_AISLADA.wav"),
@@ -125,30 +127,105 @@ def get_audio_track_paths(video_path: str) -> Dict[str, Dict[str, str]]:
         }
     }
 
+def get_video_disk_usage(video_path: str) -> Dict[str, Any]:
+    total_bytes = 0
+    if not video_path:
+        return {"total_bytes": 0, "total_mb": 0.0}
+
+    # 1. Video source file
+    if os.path.exists(video_path):
+        try:
+            total_bytes += os.path.getsize(video_path)
+        except Exception:
+            pass
+
+    safe_name = get_video_safe_name(video_path)
+
+    # 2. Cues JSON in data/
+    cues_file = get_cues_filepath(video_path)
+    if os.path.exists(cues_file):
+        try:
+            total_bytes += os.path.getsize(cues_file)
+        except Exception:
+            pass
+
+    # 3. Output files matching safe_name
+    if os.path.exists(OUTPUT_DIR):
+        for f in os.listdir(OUTPUT_DIR):
+            p = os.path.join(OUTPUT_DIR, f)
+            if os.path.isfile(p):
+                if f.startswith(safe_name) or (safe_name != "ad" and safe_name in f):
+                    try:
+                        total_bytes += os.path.getsize(p)
+                    except Exception:
+                        pass
+
+    # 4. TTS audio files in output/tts
+    if os.path.exists(TTS_DIR):
+        for f in os.listdir(TTS_DIR):
+            if f.startswith(f"cue_{safe_name}_"):
+                p = os.path.join(TTS_DIR, f)
+                if os.path.isfile(p):
+                    try:
+                        total_bytes += os.path.getsize(p)
+                    except Exception:
+                        pass
+
+    return {
+        "total_bytes": total_bytes,
+        "total_mb": round(total_bytes / (1024 * 1024), 1)
+    }
+
 def list_available_videos():
     videos = []
     # Check default root videos
     for f in sorted(os.listdir(BASE_DIR)):
         if f.lower().endswith((".mp4", ".mov", ".m4v", ".webm")):
             p = os.path.join(BASE_DIR, f)
-            videos.append({"filename": f, "path": p, "is_default": f == os.path.basename(DEFAULT_VIDEO)})
+            is_def = (f == os.path.basename(DEFAULT_VIDEO))
+            usage = get_video_disk_usage(p)
+            size_mb = round(os.path.getsize(p) / (1024 * 1024), 1) if os.path.exists(p) else 0.0
+            videos.append({
+                "filename": f,
+                "path": p,
+                "is_default": is_def,
+                "size_mb": size_mb,
+                "total_mb": usage["total_mb"],
+                "can_delete": not is_def
+            })
     # Check uploads
     if os.path.exists(UPLOADS_DIR):
         for f in sorted(os.listdir(UPLOADS_DIR)):
             if f.lower().endswith((".mp4", ".mov", ".m4v", ".webm")):
                 p = os.path.join(UPLOADS_DIR, f)
-                videos.append({"filename": f, "path": p, "is_default": False})
+                usage = get_video_disk_usage(p)
+                size_mb = round(os.path.getsize(p) / (1024 * 1024), 1) if os.path.exists(p) else 0.0
+                videos.append({
+                    "filename": f,
+                    "path": p,
+                    "is_default": False,
+                    "size_mb": size_mb,
+                    "total_mb": usage["total_mb"],
+                    "can_delete": True
+                })
     return videos
 
 @app.get("/api/project")
 def get_project_data():
     video_path = state["current_video"]
-    if not os.path.exists(video_path) and os.path.exists(DEFAULT_VIDEO):
+    if (not video_path or not os.path.exists(video_path)) and os.path.exists(DEFAULT_VIDEO):
         video_path = DEFAULT_VIDEO
         state["current_video"] = video_path
 
     video_info = None
-    if os.path.exists(video_path):
+    accessible_info = None
+    audio_tracks = {
+        "isolated": {"wav_available": False, "wav_url": None, "mp3_available": False, "mp3_url": None},
+        "mixed": {"wav_available": False, "wav_url": None, "mp3_available": False, "mp3_url": None}
+    }
+    cues = []
+
+    if video_path and os.path.exists(video_path):
         try:
             video_info = get_video_info(video_path)
             if video_path.startswith(UPLOADS_DIR):
@@ -158,34 +235,33 @@ def get_project_data():
         except Exception as e:
             video_info = {"error": str(e), "filename": os.path.basename(video_path)}
 
-    accessible_path = get_accessible_video_path(video_path)
-    accessible_info = None
-    if os.path.exists(accessible_path):
-        try:
-            accessible_info = get_video_info(accessible_path)
-            acc_name = os.path.basename(accessible_path)
-            accessible_info["url"] = f"/media/accessible/{acc_name}"
-            accessible_info["vtt_url"] = f"/media/accessible/{acc_name.rsplit('.', 1)[0]}.vtt"
-        except Exception:
-            pass
+        accessible_path = get_accessible_video_path(video_path)
+        if os.path.exists(accessible_path):
+            try:
+                accessible_info = get_video_info(accessible_path)
+                acc_name = os.path.basename(accessible_path)
+                accessible_info["url"] = f"/media/accessible/{acc_name}"
+                accessible_info["vtt_url"] = f"/media/accessible/{acc_name.rsplit('.', 1)[0]}.vtt"
+            except Exception:
+                pass
 
-    audio_paths = get_audio_track_paths(video_path)
-    audio_tracks = {
-        "isolated": {
-            "wav_available": os.path.exists(audio_paths["isolated"]["wav"]),
-            "wav_url": f"/media/accessible/{os.path.basename(audio_paths['isolated']['wav'])}" if os.path.exists(audio_paths["isolated"]["wav"]) else None,
-            "mp3_available": os.path.exists(audio_paths["isolated"]["mp3"]),
-            "mp3_url": f"/media/accessible/{os.path.basename(audio_paths['isolated']['mp3'])}" if os.path.exists(audio_paths["isolated"]["mp3"]) else None
-        },
-        "mixed": {
-            "wav_available": os.path.exists(audio_paths["mixed"]["wav"]),
-            "wav_url": f"/media/accessible/{os.path.basename(audio_paths['mixed']['wav'])}" if os.path.exists(audio_paths["mixed"]["wav"]) else None,
-            "mp3_available": os.path.exists(audio_paths["mixed"]["mp3"]),
-            "mp3_url": f"/media/accessible/{os.path.basename(audio_paths['mixed']['mp3'])}" if os.path.exists(audio_paths["mixed"]["mp3"]) else None
+        audio_paths = get_audio_track_paths(video_path)
+        audio_tracks = {
+            "isolated": {
+                "wav_available": os.path.exists(audio_paths["isolated"]["wav"]),
+                "wav_url": f"/media/accessible/{os.path.basename(audio_paths['isolated']['wav'])}" if os.path.exists(audio_paths["isolated"]["wav"]) else None,
+                "mp3_available": os.path.exists(audio_paths["isolated"]["mp3"]),
+                "mp3_url": f"/media/accessible/{os.path.basename(audio_paths['isolated']['mp3'])}" if os.path.exists(audio_paths["isolated"]["mp3"]) else None
+            },
+            "mixed": {
+                "wav_available": os.path.exists(audio_paths["mixed"]["wav"]),
+                "wav_url": f"/media/accessible/{os.path.basename(audio_paths['mixed']['wav'])}" if os.path.exists(audio_paths["mixed"]["wav"]) else None,
+                "mp3_available": os.path.exists(audio_paths["mixed"]["mp3"]),
+                "mp3_url": f"/media/accessible/{os.path.basename(audio_paths['mixed']['mp3'])}" if os.path.exists(audio_paths["mixed"]["mp3"]) else None
+            }
         }
-    }
 
-    cues = load_cues(video_path)
+        cues = load_cues(video_path)
 
     return {
         "video": video_info,
@@ -223,6 +299,131 @@ def select_video(filename: str = Form(...)):
             return get_project_data()
     raise HTTPException(status_code=404, detail="Vídeo no encontrado.")
 
+def perform_video_deletion(filename: str):
+    matching_video = None
+    for v in list_available_videos():
+        if v["filename"] == filename:
+            matching_video = v
+            break
+
+    if not matching_video:
+        raise HTTPException(status_code=404, detail=f"El vídeo '{filename}' no existe en el sistema.")
+
+    video_path = matching_video["path"]
+    is_default = matching_video["is_default"]
+
+    if is_default:
+        raise HTTPException(
+            status_code=400,
+            detail="El vídeo de muestra predeterminado está protegido como plantilla del sistema y no puede eliminarse. Puedes eliminar cualquier otro vídeo subido."
+        )
+
+    usage = get_video_disk_usage(video_path)
+    freed_mb = usage["total_mb"]
+    safe_name = get_video_safe_name(video_path)
+
+    # 1. Clean cues and referenced TTS files
+    cues_file = get_cues_filepath(video_path)
+    if os.path.exists(cues_file):
+        try:
+            with open(cues_file, "r", encoding="utf-8") as f:
+                cues_data = json.load(f)
+                for c in cues_data:
+                    af = c.get("audio_file")
+                    if af and os.path.exists(af):
+                        try:
+                            os.remove(af)
+                        except Exception:
+                            pass
+        except Exception:
+            pass
+        try:
+            os.remove(cues_file)
+        except Exception:
+            pass
+
+    # 2. Clean TTS files matching safe_name
+    if os.path.exists(TTS_DIR):
+        for f in os.listdir(TTS_DIR):
+            if f.startswith(f"cue_{safe_name}_"):
+                try:
+                    os.remove(os.path.join(TTS_DIR, f))
+                except Exception:
+                    pass
+
+    # 3. Clean output files matching safe_name
+    if os.path.exists(OUTPUT_DIR):
+        for f in os.listdir(OUTPUT_DIR):
+            p = os.path.join(OUTPUT_DIR, f)
+            if os.path.isfile(p):
+                if f.startswith(safe_name) or (safe_name != "ad" and safe_name in f):
+                    try:
+                        os.remove(p)
+                    except Exception:
+                        pass
+
+    # 4. Remove source video file
+    if os.path.exists(video_path):
+        try:
+            os.remove(video_path)
+        except Exception as e:
+            raise HTTPException(status_code=500, detail=f"Error al eliminar archivo del vídeo: {str(e)}")
+
+    # 5. Switch current video if active was deleted
+    if state["current_video"] == video_path:
+        remaining = list_available_videos()
+        if remaining:
+            state["current_video"] = remaining[0]["path"]
+            state["status_message"] = f"Vídeo '{filename}' eliminado con éxito. Liberados {freed_mb} MB."
+        else:
+            state["current_video"] = ""
+            state["status_message"] = f"Vídeo '{filename}' eliminado. Liberados {freed_mb} MB."
+
+    return {
+        "success": True,
+        "freed_mb": freed_mb,
+        "deleted_filename": filename,
+        "project": get_project_data()
+    }
+
+@app.post("/api/delete_video")
+def delete_video_post(filename: str = Form(...)):
+    return perform_video_deletion(filename)
+
+@app.delete("/api/video/{filename}")
+def delete_video_delete(filename: str):
+    return perform_video_deletion(filename)
+
+@app.post("/api/clean_video_exports")
+def clean_video_exports_endpoint(filename: str = Form(...)):
+    matching_video = None
+    for v in list_available_videos():
+        if v["filename"] == filename:
+            matching_video = v
+            break
+
+    if not matching_video:
+        raise HTTPException(status_code=404, detail="El vídeo especificado no existe.")
+
+    video_path = matching_video["path"]
+    safe_name = get_video_safe_name(video_path)
+    freed_bytes = 0
+
+    if os.path.exists(OUTPUT_DIR):
+        for f in os.listdir(OUTPUT_DIR):
+            p = os.path.join(OUTPUT_DIR, f)
+            if os.path.isfile(p):
+                if f.startswith(safe_name) or (safe_name != "ad" and safe_name in f):
+                    try:
+                        freed_bytes += os.path.getsize(p)
+                        os.remove(p)
+                    except Exception:
+                        pass
+
+    freed_mb = round(freed_bytes / (1024 * 1024), 2)
+    state["status_message"] = f"Archivos exportados de '{filename}' eliminados ({freed_mb} MB liberados)."
+    return {"success": True, "freed_mb": freed_mb, "project": get_project_data()}
+
 @app.post("/api/save_cues")
 def save_cues(req: SaveCuesRequest):
     cues_dict = [c.dict() for c in req.cues]
@@ -250,7 +451,8 @@ async def generate_cues_endpoint(background_tasks: BackgroundTasks):
         try:
             cues = generate_ad_cues_with_gemini(video_path)
             state["status_message"] = "Sintetizando locuciones de audiodescripción..."
-            cues = asyncio.run(synthesize_all_cues(cues, voice=state["selected_voice"], output_dir=TTS_DIR))
+            prefix = get_video_safe_name(video_path)
+            cues = asyncio.run(synthesize_all_cues(cues, voice=state["selected_voice"], output_dir=TTS_DIR, prefix=prefix))
             save_cues_to_disk(cues, video_path)
             state["status_message"] = f"Audiodescripción generada con éxito ({len(cues)} intervenciones)."
         except Exception as e:
@@ -265,7 +467,8 @@ async def generate_cues_endpoint(background_tasks: BackgroundTasks):
 async def synthesize_single_cue(cue: CueItem, voice: Optional[str] = None):
     chosen_voice = voice or state["selected_voice"]
     cue_dict = cue.dict()
-    updated = await synthesize_cue_audio(cue_dict, voice=chosen_voice, output_dir=TTS_DIR)
+    prefix = get_video_safe_name(state["current_video"])
+    updated = await synthesize_cue_audio(cue_dict, voice=chosen_voice, output_dir=TTS_DIR, prefix=prefix)
 
     cues = load_cues()
     for i, c in enumerate(cues):
@@ -286,7 +489,8 @@ async def synthesize_all_endpoint(voice: Optional[str] = Form(None)):
     state["is_synthesizing"] = True
     state["status_message"] = f"Sintetizando {len(cues)} pistas con voz {chosen_voice}..."
     try:
-        updated_cues = await synthesize_all_cues(cues, voice=chosen_voice, output_dir=TTS_DIR)
+        prefix = get_video_safe_name(state["current_video"])
+        updated_cues = await synthesize_all_cues(cues, voice=chosen_voice, output_dir=TTS_DIR, prefix=prefix)
         save_cues_to_disk(updated_cues)
         state["status_message"] = "Síntesis completada."
         return {"status": "ok", "cues": updated_cues}
@@ -308,7 +512,8 @@ def export_audio_track_endpoint(background_tasks: BackgroundTasks, format: str =
         try:
             cues_to_synth = [c for c in cues if not c.get("audio_file") or not os.path.exists(c.get("audio_file", "")) or os.path.getsize(c.get("audio_file", "")) < 500]
             if cues_to_synth:
-                asyncio.run(synthesize_all_cues(cues, voice=chosen_voice, output_dir=TTS_DIR))
+                prefix = get_video_safe_name(video_path)
+                asyncio.run(synthesize_all_cues(cues, voice=chosen_voice, output_dir=TTS_DIR, prefix=prefix))
                 save_cues_to_disk(cues)
 
             info = get_video_info(video_path)
@@ -360,7 +565,8 @@ def export_video_endpoint(background_tasks: BackgroundTasks):
             cues_to_synth = [c for c in cues if not c.get("audio_file") or not os.path.exists(c.get("audio_file", "")) or os.path.getsize(c.get("audio_file", "")) < 500]
             if cues_to_synth:
                 state["status_message"] = f"Sintetizando {len(cues_to_synth)} intervenciones de voz..."
-                asyncio.run(synthesize_all_cues(cues, voice=chosen_voice, output_dir=TTS_DIR))
+                prefix = get_video_safe_name(video_path)
+                asyncio.run(synthesize_all_cues(cues, voice=chosen_voice, output_dir=TTS_DIR, prefix=prefix))
                 save_cues_to_disk(cues)
 
             target_video = get_accessible_video_path(video_path)

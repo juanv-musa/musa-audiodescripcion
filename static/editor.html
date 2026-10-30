@@ -29,8 +29,11 @@
     <div class="editor-header-center">
       <span class="project-select-label">Vídeo en edición:</span>
       <select id="select-video" class="project-select" title="Seleccionar vídeo en el que trabajar"></select>
-      <button type="button" id="btn-open-upload" class="btn-upload-trigger" title="Subir otro vídeo al gestor">
-        <span>+ Cargar Otro Vídeo</span>
+      <button type="button" id="btn-open-upload" class="btn-upload-trigger" title="Subir otro vídeo o gestionar vídeos existentes">
+        <span>+ Cargar / Gestionar Vídeos</span>
+      </button>
+      <button type="button" id="btn-delete-current-video" class="btn-delete-trigger" title="Eliminar este vídeo y liberar espacio en disco">
+        <span>🗑️ Borrar Vídeo</span>
       </button>
     </div>
 
@@ -170,21 +173,21 @@
 
   </div>
 
-  <!-- Modal para Cargar Nuevo Vídeo -->
+  <!-- Modal para Cargar y Gestionar Vídeos -->
   <div id="modal-upload" class="modal-overlay">
-    <div class="modal-box">
+    <div class="modal-box" style="max-width: 680px; max-height: 88vh; overflow-y: auto;">
       <div class="modal-header">
-        <h2 class="modal-title">Cargar Nuevo Vídeo</h2>
+        <h2 class="modal-title">Gestión de Vídeos y Almacenamiento</h2>
         <button type="button" id="btn-modal-close" class="btn-modal-close">✕</button>
       </div>
 
-      <p style="font-size: 13px; color: var(--tv-text-muted);">
-        Sube cualquier vídeo expositivo en formato <strong>MP4, MOV o WEBM</strong>. El gestor lo configurará como proyecto activo para analizar y audiodescribir.
+      <p style="font-size: 13px; color: var(--tv-text-muted); margin-bottom: 14px;">
+        Sube cualquier vídeo expositivo (MP4, MOV, WEBM) o gestiona los vídeos existentes para liberar espacio en disco.
       </p>
 
       <div id="dropzone" class="dropzone-box">
         <div class="dropzone-icon">📁</div>
-        <p style="font-weight: 700; color: #fff; margin-bottom: 4px;">Haz clic aquí o arrastra tu archivo de vídeo</p>
+        <p style="font-weight: 700; color: #fff; margin-bottom: 4px;">Haz clic aquí o arrastra un nuevo archivo de vídeo</p>
         <p style="font-size: 12px; color: var(--tv-text-muted);">Formatos admitidos: .mp4, .mov, .m4v, .webm</p>
         <input type="file" id="input-file-video" accept="video/mp4,video/quicktime,video/webm" style="display: none;">
       </div>
@@ -194,6 +197,51 @@
         <div style="width: 100%; height: 8px; background: rgba(255,255,255,0.1); border-radius: 4px; overflow: hidden;">
           <div id="upload-progress-bar" style="width: 0%; height: 100%; background: var(--musa-green); transition: width 0.2s;"></div>
         </div>
+      </div>
+
+      <!-- Sección de vídeos almacenados en el sistema -->
+      <div class="stored-videos-section" style="margin-top: 24px; border-top: 1px solid var(--tv-border); padding-top: 18px;">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+          <h3 style="font-size: 14px; font-weight: 700; color: #fff; margin: 0; display: flex; align-items: center; gap: 8px;">
+            <span>📼 Vídeos Disponibles en el Gestor</span>
+            <span id="storage-total-badge" class="badge-pill" style="font-size: 11px; background: rgba(140, 198, 63, 0.2); color: var(--musa-green); padding: 2px 8px; border-radius: 10px; font-weight: 600;"></span>
+          </h3>
+        </div>
+        <div id="stored-videos-list" class="stored-videos-list">
+          <!-- Renderizado dinámico desde editor.js -->
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal para Confirmar Eliminación -->
+  <div id="modal-confirm-delete" class="modal-overlay">
+    <div class="modal-box" style="max-width: 480px;">
+      <div class="modal-header">
+        <h2 class="modal-title" style="color: #f87171; display: flex; align-items: center; gap: 8px;">
+          <span>🗑️</span> Confirmar Eliminación
+        </h2>
+        <button type="button" id="btn-confirm-delete-close" class="btn-modal-close">✕</button>
+      </div>
+
+      <div style="margin: 16px 0; font-size: 13.5px; line-height: 1.5; color: #cbd5e1;">
+        <p>¿Estás seguro de que deseas eliminar permanentemente el vídeo <strong id="delete-target-name" style="color: #fff;"></strong>?</p>
+        <div style="background: rgba(239, 68, 68, 0.1); border: 1px solid rgba(239, 68, 68, 0.3); border-radius: 6px; padding: 12px; margin-top: 12px; font-size: 12.5px; color: #fca5a5;">
+          <strong>Se liberará espacio eliminando:</strong>
+          <ul style="margin: 6px 0 0 16px; padding: 0;">
+            <li>Archivo de vídeo original</li>
+            <li>Pistas de audio y locuciones sintetizadas</li>
+            <li>Guión de audiodescripción guardado</li>
+            <li>Renders de vídeo y audios exportados</li>
+          </ul>
+        </div>
+      </div>
+
+      <div style="display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px;">
+        <button type="button" id="btn-cancel-delete" class="btn-cancel-action">Cancelar</button>
+        <button type="button" id="btn-execute-delete" class="btn-danger-action">
+          <span>🗑️ Sí, Eliminar Definitivamente</span>
+        </button>
       </div>
     </div>
   </div>
