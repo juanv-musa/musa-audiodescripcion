@@ -1,57 +1,83 @@
-# MUSA · Sistema de Audiodescripción Accesible para Museos
-### Centro de Interpretación Santuario Ibérico de “El Pajarillo” (Huelma)
+# MUSA · Gestor Universal de Audiodescripción Accesible
+### Musaraña · Accesibilidad Audiovisual para Museos y Espacios Culturales
 
-Sistema integral de accesibilidad audiovisual para personas ciegas y con baja visión, diseñado específicamente para salas audiovisuales y pantallas interactivas de museos (Kioscos y TV 65").
-
----
-
-## 🚀 ¿Cómo funciona?
-
-El sistema cuenta con **dos interfaces**:
-
-1. **Pantalla del Museo (`http://localhost:8000/`)**:
-   - Diseñada para la televisión táctil de 65" o tótem de la sala del museo en servidor local.
-   - Selector en pantalla gigante:
-     - 🔊 **Versión Estándar**: Reproducción documental convencional con la locución original.
-     - 👁️‍🗨️ **Con Audiodescripción (Accesible)**: Reproducción inclusiva con la capa de voz descriptiva sincronizada en los silencios, aplicando *audio ducking* sutil a la música de fondo.
-   - Subtítulos descriptivos opcionales de alto contraste (norma UNE 153020).
-   - Accesibilidad por teclado / pulsadores:
-     - `Espacio`: Reproducir / Pausar
-     - `Flechas izquierda/derecha`: Retroceder / Avanzar 5s
-     - `Tecla A`: Conmutar modo Audiodescripción
-     - `Tecla C`: Mostrar / Ocultar subtítulos
-     - `Tecla F`: Pantalla completa
-
-2. **Estudio de Audiodescripción IA (`http://localhost:8000/editor`)**:
-   - Diseñado para ti y tu equipo técnico para revisar, ajustar y dar el visto bueno:
-     - **Análisis con Gemini**: Escucha el vídeo, detecta los momentos de pausa o música y redacta las descripciones visuales exactas en español de España.
-     - **Síntesis Neural Edge-TTS**: Voces ultra naturales sin coste de API (Álvaro o Elvira).
-     - **Editor interactivo**: Puedes retocar cualquier palabra, ajustar segundos de inicio/fin y escuchar la muestra con un solo clic.
-     - **Renderizado Final FFmpeg**: Genera el vídeo final accesible con ducking automático de audio y el archivo de subtítulos `.vtt`.
+Sistema integral de accesibilidad audiovisual para personas con discapacidad visual o baja visión. Permite analizar vídeos con inteligencia artificial multimodal, redactar y sincronizar descripciones visuales en los silencios del contenido, sintetizar voces neurales de alta naturalidad y exportar vídeos y pistas de audio listas para emisión o sala expositiva.
 
 ---
 
-## 🛠️ Puesta en Marcha en el Servidor Local
+## 📖 Manual de Uso para el Equipo
 
-Para arrancar el servidor en cualquier momento:
+Para una guía paso a paso pensada para operadores y compañeros de equipo, consulta el archivo:
+👉 **[MANUAL_DE_USO.md](./MANUAL_DE_USO.md)**
+
+---
+
+## 🚀 Capacidades Principales
+
+1. **Gestión Multivídeo y Almacenamiento**:
+   - Subida y gestión de cualquier vídeo expositivo (**MP4, MOV, WEBM, M4V**).
+   - Panel de gestión de almacenamiento con cálculo en tiempo real de los MB ocupados.
+   - **Herramienta de borrado seguro (`🗑️ Borrar Vídeo`)**: elimina el vídeo fuente, sus pistas de voz, guiones y renders exportados para no saturar el servidor ni la nube.
+
+2. **Detección y Redacción Asistida por IA**:
+   - Análisis con Gemini Multimodal para detectar momentos libres de diálogo y narrar los elementos visuales clave en español (norma UNE 153020).
+
+3. **Locución Neural de Alta Naturalidad (Edge-TTS)**:
+   - Voces naturales en español de España: **Álvaro** (masculina) y **Elvira** (femenina).
+   - Síntesis inmediata por intervención o en lote para todo el proyecto.
+
+4. **Estudio de Edición y Línea de Tiempo**:
+   - Reproductor sincronizado con slots visuales en la línea de tiempo.
+   - Edición de texto y ajuste de tiempos de inicio/fin en milisegundos.
+   - Preescucha individual de audios.
+
+5. **Exportación Multipropósito**:
+   - **Vídeo final accesible (MP4)**: renderizado con *audio ducking* (atenuación automática de la música durante la voz) y subtítulos `.vtt`.
+   - **Pistas de audio profesionales**:
+     - *Pista Aislada (Solo Voz AD sincronizada)* en WAV o MP3 para sistemas de audio inalámbrico de museo o edición en DAW.
+     - *Pista con Mezcla Completa* en WAV o MP3 con ducking integrado.
+
+---
+
+## 🛠️ Puesta en Marcha en Local
+
+Para arrancar el servidor en local:
 
 ```bash
 ./iniciar.sh
 ```
 
-El servidor quedará disponible en la red local del museo (por ejemplo: `http://192.168.1.X:8000`).
+O directamente mediante el entorno virtual:
+
+```bash
+source .venv/bin/activate
+python app.py
+```
+
+La aplicación estará accesible en:
+- `http://localhost:8000/`
+
+---
+
+## ☁️ Despliegue en la Nube (Render / Docker)
+
+El proyecto incluye configuración nativa para Render (`render.yaml` y `Dockerfile`):
+- Se despliega automáticamente mediante Webhook con cada `git push origin main`.
+- Utiliza FastAPI, Uvicorn y FFmpeg para el procesamiento de medios.
 
 ---
 
 ## 📁 Estructura del Proyecto
 
-- `app.py`: Servidor backend en FastAPI con soporte de streaming HTTP Range (206 Partial Content).
-- `core/ad_engine.py`: Motor de audiodescripción, conexión con Gemini, síntesis de voz y filtros complejos de mezcla FFmpeg.
+- `app.py`: Servidor backend en FastAPI (API REST, gestión de vídeos, streaming y descargas).
+- `core/ad_engine.py`: Motor de audiodescripción, Gemini Multimodal, Edge-TTS y renderizado FFmpeg.
 - `static/`:
-  - `index.html` & `css/museum.css` & `js/museum.js`: Reproductor accesible del museo con la identidad gráfica corporativa del Santuario de El Pajarillo.
-  - `editor.html` & `css/editor.css` & `js/editor.js`: Panel de validación y autoría.
-- `data/ad_cues.json`: Registro de marcas de tiempo y textos de audiodescripción.
+  - `editor.html`: Interfaz del Estudio Universal de Audiodescripción.
+  - `css/editor.css`: Estilos visuales con identidad Musaraña.
+  - `js/editor.js`: Lógica interactiva del reproductor, timeline y llamadas a API.
+- `uploads/`: Directorio donde se almacenan los vídeos subidos por los usuarios.
+- `data/`: Guiones JSON con las marcas de tiempo y textos de audiodescripción.
 - `output/`:
-  - `DOCUMENTAL_EL_PAJARILLO_accesible.mp4`: Vídeo final renderizado para la pantalla del museo.
-  - `DOCUMENTAL_EL_PAJARILLO_accesible.vtt`: Subtítulos accesibles estandarizados.
-  - `tts/`: Archivos de voz sintetizada.
+  - `tts/`: Archivos MP3 de las intervenciones sintetizadas.
+  - Vídeos y pistas de audio exportadas (`.mp4`, `.wav`, `.mp3`, `.vtt`).
+- `MANUAL_DE_USO.md`: Manual operativo para el equipo.
